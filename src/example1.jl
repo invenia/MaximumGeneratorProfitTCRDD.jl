@@ -71,7 +71,7 @@ print_results = true
 print_progress = true
 print_plots = true
 #Get Slack Generator component ,ID and name
-(gen_thermal_slack,gen_thermal_slack_id,gen_thermal_slack_name)=get_thermal_slack(sys)
+(gen_thermal_slack,gen_thermal_slack_loc,gen_thermal_slack_name)=get_thermal_slack(sys)
 set_active_power_limits!(gen_thermal_slack,(min = 0.0, max = 1.0))
 # Main Functions
 include(joinpath("./src", "MaxGenProfit_tcrdd.jl"))
@@ -79,6 +79,7 @@ include(joinpath("./src", "MaxGenProfit_tcrdd.jl"))
 dual_lines_tol, dual_gen_tol, segm_bid_argmax_profit, maxit_scr, maxit_bi, epsilon, 
 print_results, print_progress, print_plots, network, solver)
 
+#Short Pause to see output data
 sleep(10)
 
 div = 500

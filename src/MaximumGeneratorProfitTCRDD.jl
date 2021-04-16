@@ -24,29 +24,34 @@ const PSI = PowerSimulations
 include("powersystemaux/assign_lines_index.jl")
 include("powersystemaux/change_slack!.jl")
 include("powersystemaux/get_binding_lines.jl")
-include("powersystemaux/get_Pg_thermal_slack.jl")
 include("powersystemaux/get_Pg_thermal_bindingPg.jl")
 include("powersystemaux/get_Pg_thermal_constprice.jl")
 include("powersystemaux/get_Pg_thermal_nonzeroslope.jl")
+include("powersystemaux/get_Pg_thermal_slack.jl")
 include("powersystemaux/get_PTDF_bindingLines.jl")
 include("powersystemaux/get_PTDF_load.jl")
 include("powersystemaux/get_PTDF_thermal_bindingPg.jl")
 include("powersystemaux/get_PTDF_thermal_constprice.jl")
 include("powersystemaux/get_PTDF_thermal_nonzeroslope.jl")
 include("powersystemaux/get_PTDF_thermal_slack.jl")
-include("powersystemaux/get_thermal_slack.jl")
 include("powersystemaux/get_thermal_bindingPg.jl")
-include("powersystemaux/get_thermal_nonzeroslope.jl")
 include("powersystemaux/get_thermal_constprice.jl")
+include("powersystemaux/get_thermal_nonzeroslope.jl")
+include("powersystemaux/get_thermal_slack.jl")
 include("powersystemaux/opf_PTDF.jl")
 
 # Functions for TCRDD Algorithm
-include("algorithm/f_TCRDD.jl")
+
 include("algorithm/bid_argmax_profit.jl")
-include("algorithm/compare_tan_inv_RDC.jl")
 include("algorithm/bisection_loop.jl")
+include("algorithm/compare_tan_inv_RDC.jl")
 include("algorithm/d2f_PgPg_nonzeroslope.jl")
+include("algorithm/disp_plots.jl")
+include("algorithm/f_TCRDD.jl")
 include("algorithm/residual_demand.jl")
+
+# Example Data Functions
+include("data/example_case4pu.jl")
 
 # Main Functions 
 include("maxGenProfit_tcrdd.jl")
@@ -69,6 +74,7 @@ export get_PTDF_thermal_slack
 export get_thermal_bindingPg
 export get_thermal_nonzeroslope
 export get_thermal_constprice
+export get_thermal_slack
 
 # Useful Calculation Functions
 export change_slack!
