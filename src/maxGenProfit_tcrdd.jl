@@ -49,7 +49,7 @@ until the bid that maximises the generators profit is found [1].
                                             of the slack generator.
 
 """
-function MaxGenProfit_tcrdd(
+function maxGenProfit_tcrdd(
     sys::System,
     bid0::Float64;
     dual_lines_tol::Float64 = 1e-1,
@@ -201,14 +201,13 @@ function MaxGenProfit_tcrdd(
                 # ----------------------------------
                 # ----------Bisection Loop----------
                 # ----------------------------------
-                (stop, iter_bi, bid_opt_found, bid_opt, bid_mid) = bisection_loop(
+                (stop, iter_bi, bid_opt_found, bid_opt, bid_mid) = bisection_loop!(
                     sys,
                     BaseMVA,
                     bid_lo,
                     bid_hi,
                     Pmin_orig,
                     Pmax_orig,
-                    bid_opt_found,
                     stop;
                     maxit_bi,
                     network,
@@ -216,7 +215,9 @@ function MaxGenProfit_tcrdd(
                     print_plots,
                     segm_bid_argmax_profit,
                     epsilon,
-                    print_progress
+                    print_progress,
+                    dual_lines_tol,
+                    dual_gen_tol
                 )
                 break
             else
@@ -227,11 +228,18 @@ function MaxGenProfit_tcrdd(
     end
     # ----------Print Results----------
     if print_results
-        a=println("Found Optimal Bid: ", bid_opt_found)
-        b=println("Optimal Bid Value: ", bid_opt)
-        c=println("Local optimum exists in: [ ",bid_lo," , ",bid_hi," ]")
-        d=println("Screening Loop iter: ", iter_scr)
-        e=println("Bisection Loop iter: ", iter_bi)
+        println(" ")
+        println("----------Maximum Profit TCRDD Results----------")
+        println("Found Optimal Bid: ", bid_opt_found)
+        println("Optimal Bid Value: ", bid_opt)
+        println("Local optimum exists in: [ ",bid_lo," , ",bid_hi," ]")
+        println("Screening Loop iter: ", iter_scr)
+        println("Bisection Loop iter: ", iter_bi)
+        println("------------------------------------------------")
     end
-    return(bid_opt_found, bid_opt, bid_lo, bid_hi, iter_scr, iter_bi)
+
+    #Restore the active power Limits to Bidmin = Pmin_orig Bidmax = Pmax_orig
+    set_active_power_limits!(gen_thermal_slack, (min = Pmin_orig, max = Pmax_orig))
+
+    return (bid_opt_found, bid_opt, bid_lo, bid_hi, iter_scr, iter_bi)
 end

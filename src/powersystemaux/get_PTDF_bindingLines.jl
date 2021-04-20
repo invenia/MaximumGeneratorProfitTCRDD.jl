@@ -2,7 +2,7 @@
     function get_PTDF_bindingLines(args...; kwargs...)
 
 Takes the full PTDF matrix of the system and only selects the rows that correspond to the
-binding lines of a solved OPF case. It returns the filtered PTDF Matrix. To determine if a
+binding lines of a solved OPF case. It returns the parsed PTDF Matrix. To determine if a
 branch are binding, the dual variables from the OPF are compared against a tolerance.
 
 #Arguments

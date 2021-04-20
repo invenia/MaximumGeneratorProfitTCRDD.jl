@@ -26,6 +26,7 @@ function assign_lines_index(lines)
         line_count = line_count + 1
         all_lines[line_count,1] = line.name
     end
+
     all_lines_sorted = Array{Any}(undef,(length(lines), 2))
     all_lines_sorted[:, 1] = sort(all_lines[:, 1])
     all_lines_sorted[:, 2] = [1:length(lines);]
@@ -37,5 +38,6 @@ function assign_lines_index(lines)
             end
         end
     end
+
     return (all_lines, all_lines_sorted)
 end

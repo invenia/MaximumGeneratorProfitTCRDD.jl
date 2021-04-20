@@ -1,18 +1,31 @@
-function get_PTDF_thermal_slack(sys::System, PTDF_matrix ::Any)
-    #Get Slack Generator, locate its bus and return corresponding PTDF matrix
-    gen_slack = 0
-    gens_thermal_slack_name = Array{String}(undef,0)
-    gen_thermal_slack_busnumber = Array{Int64}(undef,0)
-    gens_thermal = get_components(ThermalStandard, sys)
-    for gen_thermal in gens_thermal
-        if get_bustype(gen_thermal.bus)== BusTypes.REF
-            gen_slack = gen_slack + 1
-            resize!(gens_thermal_slack_name, gen_slack)
-            resize!(gen_thermal_slack_busnumber,gen_slack)
-            gens_thermal_slack_name[gen_slack] = gen_thermal.name
-            gen_thermal_slack_busnumber[gen_slack] = gen_thermal.bus.number
-        end
-    end
+"""
+    function get_PTDF_thermal_slack(sys::System, PTDF_matrix ::Any)
+
+Get Slack Generator, locate its bus and return the corresponding PTDF matrix
+
+# Arguments
+- `Name`:                                   Description
+-------------------------------------------------------------------------------------------
+- `sys::System`:                            Power system in p.u. (from PowerSystems.jl)
+- `PTDF_matrix::Any`:                       PTDF matrix as a direct output from
+                                            PTDF_matrix = PTDF(sys), see PowerSystems.jl
+
+# Throws
+- `Name`:                                   Description
+-------------------------------------------------------------------------------------------
+- `ERROR`:                                  PTDF_matrix has no field data. The argument must
+                                            be a direct output from PTDF_matrix = PTDF(sys)
+                                            see PowerSystems.jl
+
+"""
+function get_PTDF_thermal_slack(sys::System, PTDF_matrix::Any)
+    # Get Slack Generator
+    gslack = get_thermal_slack(sys)
+    (gen_thermal_slack,gen_thermal_slack_loc,gen_thermal_slack_name) = gslack
+    # Save slack bus number
+    gen_thermal_slack_busnumber = gen_thermal_slack.bus.number
+    # Parse the PTDF matrix to only have the slack bus
     PTDF_slack = PTDF_matrix[:,gen_thermal_slack_busnumber]
+
     return (gen_thermal_slack_busnumber, PTDF_slack)
 end

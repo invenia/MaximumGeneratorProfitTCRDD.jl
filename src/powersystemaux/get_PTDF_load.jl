@@ -1,6 +1,28 @@
+"""
+    function get_PTDF_load(sys::System, PTDF_matrix ::Array)
+
+Takes the full PTDF matrix of the system and only selects the columns that correspond to the
+load nodes (PQ). It returns the parsed PTDF Matrix sorted by bus.
+
+# Arguments
+- `Name`:                                   Description
+-------------------------------------------------------------------------------------------
+- `sys::System`:                            Power system in p.u. (from PowerSystems.jl)
+- `PTDF_matrix::Any`:                       PTDF matrix as a direct output from
+                                            PTDF_matrix = PTDF(sys), see PowerSystems.jl
+
+
+# Throws
+- `Name`:                                   Description
+-------------------------------------------------------------------------------------------
+- `ERROR`:                                  PTDF_matrix has no field data. The argument must
+                                            be a direct output from PTDF_matrix = PTDF(sys)
+                                            see PowerSystems.jl
+
+"""
 function get_PTDF_load(sys::System, PTDF_matrix ::Array)
-    #Finds the PQnodes and obtains the PTDF matrix for those nodes
-    #Get components of the Bus
+
+    #----------Get components of the Bus-----------
     buses = get_components(Bus, sys)
     numberof_PQnodes = 0
     (nl,nb)=size(PTDF_matrix)
@@ -20,5 +42,6 @@ function get_PTDF_load(sys::System, PTDF_matrix ::Array)
         sort!(PQ_buses)
         PTDF_PQLoad = PTDF_matrix[:,PQ_buses]
     end
+
     return(PQ_buses, PTDF_PQLoad)
 end

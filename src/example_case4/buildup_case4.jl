@@ -1,26 +1,22 @@
-function example_case4pu()
-    
-    # ----------Constuct example power system case----------
-    # ---------- Dates ----------
-    dates = collect(
-        DateTime("1/1/2024  0:00:00", "d/m/y  H:M:S"):Hour(1):DateTime(
-            "1/1/2024  23:00:00",
-            "d/m/y  H:M:S",
-        ),
-    )
-    # ---------- Buses of the System ----------
-    #Bus(
-    #    1,                        #Bus number
-    #    "Bus 1",                  #Bus name
-    #    "REF",                    #Bus type
-    #    0.0,                      #Va [rad?] [deg?]
-    #    1.0,                      #Vm [pu]
-    #    (min = 0.9, max = 1.1),   #Voltage limits
-    #    220,                      #Voltage Base
-    #    nothing,
-    #    nothing)
+# ---------- Build up functions ----------
+"""
+    function filter_kwargs(; kwargs...)
 
-    nodes4_tcrd() = [
+Gets and filters keyword arguments to build the example system for case 4
+"""
+function filter_kwargs(; kwargs...)
+    system_kwargs = filter(x -> in(first(x), PSY.SYSTEM_KWARGS), kwargs)
+    return (system_kwargs)
+end
+
+# ---------- Buses of the System ----------
+"""
+    function nodes4_tcrd()
+
+Returns the data with the information of the buses of the example system case 4
+"""
+function nodes4_tcrd()
+    nodes4 = [
         Bus(
             1,
             "Bus 1",
@@ -65,10 +61,23 @@ function example_case4pu()
             nothing,
         ),
     ]
+    return (nodes4)
+end
 
 # ---------- Lines of the System ----------
+"""
+    function branches4_tcrd(nodes4_tcrd)
 
-    branches4_tcrd(nodes4_tcrd) = [
+Returns the data with the information of the Lines of the system for the example case 4
+
+# Arguments
+- `Name`:                                   Description
+-------------------------------------------------------------------------------------------
+- `nodes4_tcrd`:                            Array with the information of the buses of
+                                            the example system case 4
+"""
+function branches4_tcrd(nodes4_tcrd)
+    branches4 = [
         Line(
             "Line1",
             true,
@@ -130,10 +139,24 @@ function example_case4pu()
             1.0,
         ),
     ]
+    return (branches4)
+end
 
-# ---------- Generators of the System ----------
+# ---------- Thermal Generators of the System ----------
+"""
+    function thermal_generators4_tcrd(nodes4_tcrd)
 
-    thermal_generators4_tcrd(nodes4_tcrd) = [
+Returns the data with the information of the thermal generators of the system for the
+example case 4
+
+# Arguments
+- `Name`:                                   Description
+-------------------------------------------------------------------------------------------
+- `nodes4_tcrd`:                            Array with the information of the buses of
+                                            the example system case 4
+"""
+function thermal_generators4_tcrd(nodes4_tcrd)
+    thermal4 = [
         ThermalStandard(
             name = "GBus1",
             available = true,
@@ -207,13 +230,23 @@ function example_case4pu()
         ),
         #operation_cost = ThreePartCost((0.325000, 20.000), 0.0, 0.0, 0.0),
     ]
+    return (thermal4)
+end
 
-# ----------Load pattern for 24 hrs----------
-    #time series per zone
-    loadz1_ts = ones(Float64, 24)
+# ---------- Loads of the System ----------
+"""
+    function loads4_tcrd(nodes4_tcrd)
 
-# ----------Loads of the system----------
-    loads4_tcrd(nodes4_tcrd) = [
+Returns the data with the information of the Loads of the system for the example case 4
+
+# Arguments
+- `Name`:                                   Description
+-------------------------------------------------------------------------------------------
+- `nodes4_tcrd`:                            Array with the information of the buses of
+                                            the example system case 4
+"""
+function loads4_tcrd(nodes4_tcrd)
+    loads4 = [
         PowerLoad(
             "Bus3",
             true,
@@ -237,47 +270,5 @@ function example_case4pu()
             0.0,
         ),
     ]
-
-    timeseries_DA4_tcrd = [
-        TimeArray(dates, loadz1_ts),
-        TimeArray(dates, loadz1_ts),
-    ];
-
-# ---------- Build up functions ----------
-    function filter_kwargs(; kwargs...)
-        system_kwargs = filter(x -> in(first(x), PSY.SYSTEM_KWARGS), kwargs)
-        return system_kwargs
-    end
-
-    function build_c_sys4_tcrd(; kwargs...)
-        sys_kwargs = filter_kwargs(; kwargs...)
-        nodes = nodes4_tcrd()
-        c_sys4_tcrd = PSY.System(
-            100.0,
-            nodes,
-            thermal_generators4_tcrd(nodes),
-            loads4_tcrd(nodes),
-            branches4_tcrd(nodes);
-            time_series_in_memory = get(sys_kwargs, :time_series_in_memory, true),
-            sys_kwargs...,
-        )
-
-        if get(kwargs, :add_forecasts, true)
-            forecast_data = SortedDict{Dates.DateTime, TimeSeries.TimeArray}()
-            for (ix, l) in enumerate(PSY.get_components(PowerLoad, c_sys4_tcrd))
-                ini_time = TimeSeries.timestamp(timeseries_DA4_tcrd[ix])[1]
-            forecast_data[ini_time] = timeseries_DA4_tcrd[ix]
-            PSY.add_time_series!(
-                c_sys4_tcrd,
-                l,
-                PSY.Deterministic("max_active_power", forecast_data),
-            )
-        end
-        end
-        return c_sys4_tcrd
-    end
-
-    # ---------- Build up test case ----------
-    sys = build_c_sys4_tcrd()
-    return (sys)
+    return (loads4)
 end

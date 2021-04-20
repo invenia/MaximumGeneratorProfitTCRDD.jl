@@ -107,7 +107,7 @@ function f_TCRDD(
     # to the active power of the non zero slope generators
     (d2f_PgPgnonzeroslope, d2f_PgPgnonzeroslope_MatrixInfo) = d2f_PgPg_nonzeroslope(
         sys,
-        res,
+        res;
         dual_gen_tol
     )
 
