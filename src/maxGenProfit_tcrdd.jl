@@ -1,6 +1,5 @@
-
 """
-    function MaxGenProfit_tcrdd(sys::System, bid0::Float64; kwargs...)
+    function maxGenProfit_tcrdd(sys::System, bid0::Float64; kwargs...)
 
 Returns the bid which maximises the profit of the Generator at the slack bus using
 the Transmission Constrained Residual Demand Derivative (TCRDD).
