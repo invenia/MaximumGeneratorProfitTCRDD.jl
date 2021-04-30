@@ -104,6 +104,7 @@ function bisection_loop!(
             # Evaluate Profit
             (profit_argmax_lo, bid_argmax_lo) = bid_argmax_profit(
                 sys,
+                res_lo,
                 BaseMVA,
                 lmp_lo,
                 tcrdd_slack_lo,
@@ -124,6 +125,7 @@ function bisection_loop!(
             # Evaluate Profit
             (profit_argmax_hi, bid_argmax_hi) = bid_argmax_profit(
                 sys,
+                res_hi,
                 BaseMVA,
                 lmp_hi,
                 tcrdd_slack_hi,
@@ -138,6 +140,8 @@ function bisection_loop!(
             comparison_res = compare_tan_inv_RDC(
                 sys,
                 BaseMVA,
+                res_lo,
+                res_hi,
                 lmp_lo,
                 lmp_hi,
                 tcrdd_slack_lo,
@@ -202,6 +206,7 @@ function bisection_loop!(
         # Evaluate Profit
         (profit_argmax_mid, bid_argmax_mid) = bid_argmax_profit(
             sys,
+            res_mid,
             BaseMVA,
             lmp_mid,
             tcrdd_slack_mid,
@@ -254,6 +259,7 @@ function bisection_loop!(
                 # Evaluate Profit
                 (profit_argmax_int_epsil, bid_argmax_int_epsil) = bid_argmax_profit(
                     sys,
+                    res_int_epsil,
                     BaseMVA,
                     lmp_int_epsil,
                     tcrdd_slack_int_epsil,
@@ -290,6 +296,7 @@ function bisection_loop!(
                 # Evaluate Profit
                 (profit_argmax_int_epsil, bid_argmax_int_epsil) = bid_argmax_profit(
                     sys,
+                    res_int_epsil,
                     BaseMVA,
                     lmp_int_epsil,
                     tcrdd_slack_int_epsil,

@@ -43,7 +43,9 @@ Constrained Residual Demand Derivative (TCRDD) [1].
 """
 function compare_tan_inv_RDC(
     sys::System,
-    BaseMVA::Float64 ,
+    BaseMVA::Float64,
+    res_lo::PowerSimulations.OperationsProblemResults,
+    res_hi::PowerSimulations.OperationsProblemResults,
     lmp_lo::DataFrame,
     lmp_hi::DataFrame,
     tcrdd_slack_lo::Float64,
@@ -76,6 +78,14 @@ function compare_tan_inv_RDC(
         error("NotFoundError: No Slack found in the system")
     end
 
+    #Get Slack Generator component ,ID and name
+    (gen_thermal_slack,gen_thermal_slack_id,gen_thermal_slack_name)=get_thermal_slack(sys)
+
+    #Get Optimised Pg of slack lo and hi
+    all_PGenThermal_lo = get_variables(res_lo)[:P__ThermalStandard] #Optimised PGen
+    Pg_slack_lo = all_PGenThermal_lo[1, gen_thermal_slack_name]
+    all_PGenThermal_hi = get_variables(res_hi)[:P__ThermalStandard] #Optimised PGen
+    Pg_slack_hi = all_PGenThermal_hi[1, gen_thermal_slack_name]
     # -----------Correct tcrdd pu using BaseMVA----------
     tcrdd_slack_hi = tcrdd_slack_hi/(BaseMVA^2)
     tcrdd_slack_lo = tcrdd_slack_lo/(BaseMVA^2)
@@ -93,8 +103,8 @@ function compare_tan_inv_RDC(
 
     for Pg in Pmin_orig:step:Pmax_orig
         segment = segment + 1
-        tan_inv_RDC_lo[segment] = (((1/tcrdd_slack_lo)*(Pg-bid_lo)) + lmp_slack_lo)
-        tan_inv_RDC_hi[segment] = (((1/tcrdd_slack_hi)*(Pg-bid_hi)) + lmp_slack_hi)
+        tan_inv_RDC_lo[segment] = (((1/tcrdd_slack_lo)*(Pg-Pg_slack_lo)) + lmp_slack_lo)
+        tan_inv_RDC_hi[segment] = (((1/tcrdd_slack_hi)*(Pg-Pg_slack_hi)) + lmp_slack_hi)
         bids[segment] = Pg
         dif_tans[segment] = abs(tan_inv_RDC_hi[segment] - tan_inv_RDC_lo[segment])
         #Same function? or #Intersect

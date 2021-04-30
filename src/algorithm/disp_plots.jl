@@ -107,6 +107,16 @@ function disp_plots(
     a = ylabel!("TCRDD (pu)")
     display(a)
 
+    # ----------RDC & TCRDD vs Bid----------
+    rdc_tcrdd = Array{Float64}(undef,(div + 1, 2));
+    rdc_tcrdd[:, 1] = residualD_slack_Pg;
+    rdc_tcrdd[:, 2] = tcrdd;
+    plot(bids, rdc_tcrdd, title = "RDC & TCRDD vs Bid",
+        label = ["RDC" "TCRDD"], legend = :topright);
+    xlabel!("Bid q(pu)");
+    a = ylabel!("RDC & TCRDD")
+    display(a)
+
     # ----------Residual Demand Curve vs LMP----------
     plot(lmp_slack, residualD_slack_Pg, title = " Residual Demand Curve vs LMP",
         label = ["RDC"], legend = :topright);
@@ -119,6 +129,17 @@ function disp_plots(
         legend = :bottomright);
     xlabel!("LMP (\$/hrpu)");
     a = ylabel!("TCRDD (pu)")
+    display(a)
+
+
+    # ----------RDC & TCRDD vs LMP Slack----------
+    rdc_tcrdd = Array{Float64}(undef,(div + 1, 2));
+    rdc_tcrdd[:, 1] = residualD_slack_Pg;
+    rdc_tcrdd[:, 2] = tcrdd;
+    plot(lmp_slack, rdc_tcrdd, title = "RDC & TCRDD vs LMP",
+        label = ["RDC" "TCRDD"], legend = :topright);
+    xlabel!("LMP (\$/hrpu)");
+    a = ylabel!("RDC & TCRDD")
     display(a)
 
     # ----------Number of Binding lines----------

@@ -93,6 +93,7 @@ function maxGenProfit_tcrdd(
     # ----------Evaluate Profit----------
     (profit_argmax0, bid_argmax0) = bid_argmax_profit(
         sys,
+        res0,
         BaseMVA,
         lmp0,
         tcrdd_slack0,
@@ -141,6 +142,7 @@ function maxGenProfit_tcrdd(
                 # Evaluate Profit
                 (profit_argmax0, bid_argmax0) = bid_argmax_profit(
                     sys,
+                    res0,
                     BaseMVA,
                     lmp0,
                     tcrdd_slack0,
@@ -164,6 +166,7 @@ function maxGenProfit_tcrdd(
             # Evaluate Profit
             (profit_argmax1, bid_argmax1) = bid_argmax_profit(
                 sys,
+                res1,
                 BaseMVA,
                 lmp1,
                 tcrdd_slack1,

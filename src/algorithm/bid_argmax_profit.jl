@@ -16,6 +16,9 @@ provides the maximum profit is returned.
 - `Name`:                                   Description
 -------------------------------------------------------------------------------------------
 - `sys::System`:                            Power system in p.u. (from PowerSystems.jl)
+- `res::PowerSimulations.
+    OperationsProblemResults`:              Results of the solved OPF for the system
+                                             (from PowerSimulations.jl)
 - `BaseMVA::Float64`:                       Apparent Power Base for the system [MVA]
 - `lmp::DataFrame`:                         LMP of all buses of the system
 - `tcrdd_slack::Float64`:                   TCRDD [pu]
@@ -36,6 +39,7 @@ provides the maximum profit is returned.
 """
 function bid_argmax_profit(
     sys::System,
+    res::PowerSimulations.OperationsProblemResults,
     BaseMVA::Float64 ,
     lmp::DataFrame,
     tcrdd_slack::Float64,
@@ -65,7 +69,11 @@ function bid_argmax_profit(
     end
 
     #Get Slack Generator component ,ID and name
-    (gen_thermal_slack,gen_thermal_slack_id,gen_thermal_slack_name)=get_thermal_slack(sys);
+    (gen_thermal_slack,gen_thermal_slack_id,gen_thermal_slack_name)=get_thermal_slack(sys)
+
+    #Get Optimised Pg of slack
+    all_PGenThermal = get_variables(res)[:P__ThermalStandard] #Optimised PGen
+    Pg_slack = all_PGenThermal[1, gen_thermal_slack_name]
 
     #Get Slack Generator Costs gen_cost = αPg² + βPg + γ
     (α, β) = get_cost(get_variable(get_operation_cost(gen_thermal_slack)))
@@ -82,17 +90,17 @@ function bid_argmax_profit(
     for Pg in Pmin_orig:step:Pmax_orig
         segment = segment + 1
         #calculate the lmp aproximation using tcrdd
-        tan_inv_RDC = (((1/tcrdd_slack)*(Pg-bid)) + lmp_slack)
+        tan_inv_RDC = (((1/tcrdd_slack)*(Pg-Pg_slack)) + lmp_slack)
         gen_cost =  α*(Pg^2)*(BaseMVA^2) + β*Pg*BaseMVA + γ
         bids[segment] = Pg
-        profits[segment] = (tan_inv_RDC*Pg - gen_cost)
+        profits[segment] = (tan_inv_RDC*Pg*BaseMVA - gen_cost)
     end
     if print_plots == true
         plotly()
-        p=plot(bids, profits,title = "Approximated Profit function at bid0",
-            label = ["Profit(bid, bid0"], legend = :bottomright);
+        p=plot(bids, profits,title = "Approximated Profit function at bid: $bid",
+            label = ["Profit(bid, $bid"], legend = :bottomright, xlim = [0, 1], ylim = [0, 3e5]);
         xlabel!("bids/Pg(pu)");
-        ylabel!("Profit")
+        ylabel!("profit(\$/hr)")
         display(p)
     end
     (profit_argmax, segment_profit_argmax) = findmax(profits)

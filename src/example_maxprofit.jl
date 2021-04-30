@@ -28,8 +28,8 @@ dual_gen_tol = 1e-1
 # Segments to evaluate approximated profit function
 segm_bid_argmax_profit = 50000
 # Maximum iterations for Screening and Bisection Loops
-maxit_scr = 5
-maxit_bi = 30
+maxit_scr = 3
+maxit_bi = 5
 # Convergence Tolerance between bids in [pu]
 epsilon = 0.01 #tolerance bid_lo - bid_hi < epsilon
 # Flags
@@ -38,7 +38,7 @@ print_progress = true
 print_plots = true
 
 # ----------Initial Bid----------
-bid0 = 0.65
+bid0 = 0.3
 
 # ----------Maximize Generator Profit---------
 (bid_opt_found, bid_opt, bid_lo, bid_hi, iter_scr, iter_bi)=maxGenProfit_tcrdd(
