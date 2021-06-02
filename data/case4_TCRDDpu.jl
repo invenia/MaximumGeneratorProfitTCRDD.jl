@@ -1,5 +1,8 @@
 using TimeSeries
 using Dates
+using D3TypeTrees
+using DataFrames
+using DataStructures
 using PowerSystems
 
 dates = collect(
@@ -8,16 +11,6 @@ dates = collect(
         "d/m/y  H:M:S",
     ),
 )
-#Bus(
-#    1,                        #Bus number
-#    "Bus 1",                  #Bus name
-#    "REF",                    #Bus type
-#    0.0,                      #Va [rad?] [deg?]
-#    1.0,                      #Vm [pu]
-#    (min = 0.9, max = 1.1),   #
-#    220,
-#    nothing,
-#    nothing)
 
 nodes4_tcrd() = [
     Bus(
@@ -268,4 +261,3 @@ function build_c_sys4_tcrd(; kwargs...)
 
     return c_sys4_tcrd
 end
-

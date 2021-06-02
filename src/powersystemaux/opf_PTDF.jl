@@ -1,5 +1,26 @@
-function opf_PTDF(sys::System; network::DataType = StandardPTDFModel,
-    solver = optimizer_with_attributes(Ipopt.Optimizer))
+"""
+    function opf_PTDF(sys::System; kwargs...)
+
+Solves the Optimal Power Flow (OPF) of a power system using the PTDF matrix and returns the
+Locational Marginal Price (lmp) and the results of the optimisation (res).
+
+#Arguments
+- `Name`:                                   Description
+-------------------------------------------------------------------------------------------
+- `sys::System`:                            Power system in p.u. (from PowerSystems.jl)
+
+#Keywords
+- `Name`:                                   Description
+-------------------------------------------------------------------------------------------
+- `network::DataType = StandardPTDFModel`:  Network Representation of the Power System
+- `solver= optimizer_with_attributes
+    (Ipopt.Optimizer)`:                     Solver to be used for OPF
+"""
+function opf_PTDF(
+    sys::System; 
+    network::DataType = StandardPTDFModel,
+    solver = optimizer_with_attributes(Ipopt.Optimizer)
+    )
     #Solve the OPF and calculates the lmp
     #------------------------------
 
