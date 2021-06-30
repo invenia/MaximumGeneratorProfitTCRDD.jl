@@ -1,6 +1,6 @@
 module MaximumGeneratorProfitTCRDD
 
-# ----------Packages----------
+#  Packages
 using Cbc
 using D3TypeTrees
 using DataFrames
@@ -15,11 +15,11 @@ using PowerSimulations
 using PowerSystems
 using TimeSeries
 
-# -------Package Constants-------
+#  Package Constants
 const PSY = PowerSystems
 const PSI = PowerSimulations
 
-# ----------Functions----------
+#  Functions
 # Power System Auxiliary Functions for TCRDD Algorithm
 include("powersystemaux/assign_lines_index.jl")
 include("powersystemaux/change_slack!.jl")

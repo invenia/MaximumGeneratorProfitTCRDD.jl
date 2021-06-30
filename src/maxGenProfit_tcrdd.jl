@@ -20,14 +20,10 @@ until the bid that maximises the generators profit is found [1].
     doi: 10.1109/TPWRS.2010.2083702.
 
 # Arguments
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `sys::System`:                            Power system in p.u. (from PowerSystems.jl)
 - `bid0::Float64`:                          Initial bid for the Slack Generator in p.u.
 
 # Keywords
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `dual_lines_tol::Float64 = 1e-1`:         Tolerance to identify any binding lines
 - `dual_gen_tol::Float64 = 1e-1`:           Tolerance to identify any binding generators
 - `segm_bid_argmax_profit::Int64 = 50000:   Segments to evaluate the approx profit function
@@ -42,8 +38,6 @@ until the bid that maximises the generators profit is found [1].
     (Ipopt.Optimizer)`:                     Solver to be used for OPF
 
 # Throws
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `ArgError`:                               Initial Bid (bid0) must be within Pmin and Pmax
                                             of the slack generator.
 
@@ -64,34 +58,32 @@ function maxGenProfit_tcrdd(
     solver = optimizer_with_attributes(Ipopt.Optimizer)
     )
 
-    # ----------------------------------------
-    # ----------Local Screening Loop----------
-    # ----------------------------------------
+    # Local Screening Loop
 
     # step 1 LSL
-    # ----------Set Bid for OPF----------
-    #Get Slack Generator component ,ID and name
-    (gen_thermal_slack,gen_thermal_slack_id,gen_thermal_slack_name)=get_thermal_slack(sys)
-    #Get Original Active Power Limits
-    (Pmin_orig, Pmax_orig) = get_active_power_limits(gen_thermal_slack)
-    #Verify that initial Bid is withinbounds
+    # Set Bid for OPF
+    # Get Slack Generator component ,ID and name
+    gen_thermal_slack, gen_thermal_slack_id, gen_thermal_slack_name = get_thermal_slack(sys)
+    # Get Original Active Power Limits
+    Pmin_orig, Pmax_orig = get_active_power_limits(gen_thermal_slack)
+    # Verify that initial Bid is withinbounds
     if bid0 < Pmin_orig || bid0 > Pmax_orig
-        error("ArgError: Initial Bid (bid0) must be within Pmin: ",Pmin_orig,
-            " and Pmax: ",Pmax_orig, " for ", gen_thermal_slack_name)
+        error("ArgError: Initial Bid (bid0) must be within Pmin: ", Pmin_orig,
+            " and Pmax: ", Pmax_orig, " for ", gen_thermal_slack_name)
     end
-    #Change active power Limits to Bidmin = Pmin_orig Bidmax = bid0
+    # Change active power Limits to Bidmin = Pmin_orig Bidmax = bid0
     set_active_power_limits!(gen_thermal_slack, (min = Pmin_orig, max = bid0))
 
     # step 2 LSL
-    # ----------Solve PTDF OPF----------
-    (lmp0, res0) = opf_PTDF(sys; network, solver)
+    # Solve PTDF OPF
+    lmp0, res0 = opf_PTDF(sys; network, solver)
     BaseMVA = res0.base_power
 
-    # ----------Calculate TCRDD----------
+    # Calculate TCRDD
     tcrdd_slack0 = f_TCRDD(sys, res0; dual_lines_tol, dual_gen_tol)
 
-    # ----------Evaluate Profit----------
-    (profit_argmax0, bid_argmax0) = bid_argmax_profit(
+    # Evaluate Profit
+    profit_argmax0, bid_argmax0 = bid_argmax_profit(
         sys,
         res0,
         BaseMVA,
@@ -104,8 +96,8 @@ function maxGenProfit_tcrdd(
         print_plots
     )
 
-    # ----------Local Screening----------
-    #Initial conditions
+    # Local Screening
+    # Initial conditions
     bid_opt_found = false
     bid_opt = bid0
     bid1 = bid0
@@ -119,28 +111,28 @@ function maxGenProfit_tcrdd(
     if bid_argmax0 == bid0
         bid_opt_found = true
         bid_opt = bid0
-        println("Local optimum found in: ",bid_opt)
+        println("Local optimum found in: ", bid_opt)
     elseif bid0 == Pmax_orig && bid_argmax0 > Pmax_orig
         bid_opt_found = true
         bid_opt = bid0
-        println("Local optimum found in: ",bid_opt)
+        println("Local optimum found in: ", bid_opt)
     elseif bid0 == Pmin_orig && bid_argmax0 < Pmin_orig
         bid_opt_found = true
         bid_opt = bid0
-        println("Local optimum found in: ",bid_opt)
+        println("Local optimum found in: ", bid_opt)
     else
         # step 4 LSL
         while (iter_scr <= maxit_scr && stop == false)
             iter_scr = iter_scr + 1
-            if iter_scr > 1 #only if we need to recalculate because we are still searching
-                #Change active power Limits to Bidmin = Pmin_orig Bidmax = bid0
+            if iter_scr > 1 # only if we need to recalculate because we are still searching
+                # Change active power Limits to Bidmin = Pmin_orig Bidmax = bid0
                 set_active_power_limits!(gen_thermal_slack, (min = Pmin_orig, max = bid0))
                 # Solve PTDF OPF
-                (lmp0, res0) = opf_PTDF(sys; network, solver)
+                lmp0, res0 = opf_PTDF(sys; network, solver)
                 # Calculate TCRDD
                 tcrdd_slack0 = f_TCRDD(sys, res0; dual_lines_tol, dual_gen_tol)
                 # Evaluate Profit
-                (profit_argmax0, bid_argmax0) = bid_argmax_profit(
+                profit_argmax0, bid_argmax0 = bid_argmax_profit(
                     sys,
                     res0,
                     BaseMVA,
@@ -160,11 +152,11 @@ function maxGenProfit_tcrdd(
             # Change active power Limits to Bidmin = Pmin_orig Bidmax = bid1
             set_active_power_limits!(gen_thermal_slack,(min = Pmin_orig, max = bid1))
             # Solve PTDF OPF
-            (lmp1, res1) = opf_PTDF(sys; network, solver)
+            lmp1, res1 = opf_PTDF(sys; network, solver)
             # Calculate TCRDD
             tcrdd_slack1 = f_TCRDD(sys, res1; dual_lines_tol, dual_gen_tol)
             # Evaluate Profit
-            (profit_argmax1, bid_argmax1) = bid_argmax_profit(
+            profit_argmax1, bid_argmax1 = bid_argmax_profit(
                 sys,
                 res1,
                 BaseMVA,
@@ -180,19 +172,19 @@ function maxGenProfit_tcrdd(
             if bid_argmax1 == bid1
                 bid_opt_found = true
                 bid_opt = bid1
-                println("Local optimum found in: ",bid_opt)
+                println("Local optimum found in: ", bid_opt)
                 stop = true
                 break
             elseif bid1 == Pmax_orig && bid_argmax1 > Pmax_orig
                 bid_opt_found = true
                 bid_opt = bid1
-                println("Local optimum found in: ",bid_opt)
+                println("Local optimum found in: ", bid_opt)
                 stop = true
                 break
             elseif bid1 == Pmin_orig && bid_argmax1 < Pmin_orig
                 bid_opt_found = true
                 bid_opt = bid1
-                println("Local optimum found in: ",bid_opt)
+                println("Local optimum found in: ", bid_opt)
                 stop = true
                 break
                 # step 6 LSL
@@ -200,10 +192,9 @@ function maxGenProfit_tcrdd(
                 bid_lo = min(bid0, bid1)
                 bid_hi = max(bid0, bid1)
                 println("Local optimum exists in: [ ",bid_lo," , ",bid_hi," ]")
-                # ----------------------------------
-                # ----------Bisection Loop----------
-                # ----------------------------------
-                (stop, iter_bi, bid_opt_found, bid_opt, bid_mid) = bisection_loop!(
+
+                # Bisection Loop
+                stop, iter_bi, bid_opt_found, bid_opt, bid_mid = bisection_loop!(
                     sys,
                     BaseMVA,
                     bid_lo,
@@ -228,7 +219,7 @@ function maxGenProfit_tcrdd(
             end
         end
     end
-    # ----------Print Results----------
+    # Print Results
     if print_results
         println(" ")
         println("----------Maximum Profit TCRDD Results----------")
@@ -243,5 +234,5 @@ function maxGenProfit_tcrdd(
     #Restore the active power Limits to Bidmin = Pmin_orig Bidmax = Pmax_orig
     set_active_power_limits!(gen_thermal_slack, (min = Pmin_orig, max = Pmax_orig))
 
-    return (bid_opt_found, bid_opt, bid_lo, bid_hi, iter_scr, iter_bi)
+    return bid_opt_found, bid_opt, bid_lo, bid_hi, iter_scr, iter_bi
 end

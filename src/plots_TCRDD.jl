@@ -24,13 +24,9 @@ for a specific OPF point.
     doi: 10.1109/TPWRS.2010.2083702.
 
 #Arguments
-- `Name`                                    Description
--------------------------------------------------------------------------------------------
 - `sys::System`                             Power system in p.u. (from PowerSystems.jl)
 
 #Keywords
-- `Name`                                    Description
--------------------------------------------------------------------------------------------
 - `div::Int64 = 1000`                       Number of divisions (samples) from Pmin to Pmax
 - `network::DataType = StandardPTDFModel`   Network Representation of the Power System
 - `solver= optimizer_with_attributes
@@ -53,30 +49,28 @@ function plots_TCRDD(
     examplecase4::Bool = false
     )
 
-    # ----------Getting Slack Generator and Bus----------
-    #Get Slack Generator component ,ID and name
-    (gen_thermal_slack,gen_thermal_slack_id,gen_thermal_slack_name) = get_thermal_slack(sys)
+    # Getting Slack Generator and Bus
+    # Get Slack Generator component, ID and name
+    gen_thermal_slack, gen_thermal_slack_id, gen_thermal_slack_name = get_thermal_slack(sys)
     bus_slack = gen_thermal_slack.bus
-    bus_slack_number = bus_slack.number
     bus_slack_name = bus_slack.name
-    #Get Slack Generator Costs gen_cost = αPg² + βPg + γ
-    (α, β) = get_cost(get_variable(get_operation_cost(gen_thermal_slack)))
+    # Get Slack Generator Costs gen_cost = αPg² + βPg + γ
+    α, β = get_cost(get_variable(get_operation_cost(gen_thermal_slack)))
     γ = get_fixed(get_operation_cost(gen_thermal_slack))
-    #Get System Power Base
+    # Get System Power Base
     BaseMVA = sys.units_settings.base_value
 
-    # ----------Defining Plot limits----------
-    #Get Active Power Limits
-    (Pmin_orig, Pmax_orig) = get_active_power_limits(gen_thermal_slack)
-    #Define divisions and get step
+    # Defining Plot limits
+    # Get Active Power Limits
+    Pmin_orig, Pmax_orig = get_active_power_limits(gen_thermal_slack)
+    # Define divisions and get step
     Bidmin = Pmin_orig
     Bidmax = Pmax_orig
-    step = (Bidmax-Bidmin)/div
+    step = (Bidmax - Bidmin)/div
 
-    # ----------Dimentionalize Arrays for Plots----------
+    # Dimentionalize Arrays for Plots
     bids = Array{Float64}(undef, div+1)
     Pg_slack = Array{Float64}(undef, div+1)
-    Pg_remaining = Array{Float64}(undef, div+1)
     residualD_slack_Pg = Array{Float64}(undef, div+1)
     gen_profit = Array{Float64}(undef, div+1)
     gen_profit_tcrdd = Array{Float64}(undef, div+1)
@@ -87,19 +81,19 @@ function plots_TCRDD(
     lmp_slack_apx_tcrdd = Array{Float64}(undef, div+1)
     tcrdd = Array{Float64}(undef, div+1)
     nbind_lines = Array{Int64}(undef, div+1)
-    #TCRDD plot settings
+    # TCRDD plot settings
     same_tcrdd = false
     gap_count = 0
     tcrdd0 = 0
     lmp_slack0 = 0
     Pg_slack0 = 0
 
-    # ----------Only for Case 4 example----------
+    # Only for Case 4 example (needs to be declared even if empty to avoid conflicts)
     branch1_3= Array{Float64}(undef, div+1)
 
-    # ----------Initial Conditions----------
+    # Initial Conditions
     iter_opf = 0
-    # ----------Run Loops of OPF----------
+    # Run Loops of OPF
     for bid in Bidmin:step:Bidmax #minimum bid to maximum bid
         # Increment iterations
         iter_opf = iter_opf + 1
@@ -109,7 +103,7 @@ function plots_TCRDD(
         # Set the bid as the maximum power for OPF
         set_active_power_limits!(gen_thermal_slack, (min = Bidmin, max = bid))
         # Solve PTDF OPF
-        (lmp, res) = opf_PTDF(sys; network, solver)
+        lmp, res = opf_PTDF(sys; network, solver)
         # Calculate TCRDD
         tcrdd[iter_opf] = f_TCRDD(sys, res; dual_lines_tol, dual_gen_tol)
 
@@ -136,13 +130,13 @@ function plots_TCRDD(
         bind_lines = get_binding_lines(sys, res; dual_lines_tol)
         nbind_lines[iter_opf] = length(bind_lines[:, 1])
 
-        #----------Only for Case 4 example----------
+        # Only for Case 4 example
         if examplecase4
             # Saving Loadability of branch 1-3
             branch1_3[iter_opf] = res.variable_values[:Fp__Line][1, "Line1"]
         end
 
-        #----------Gen Profit TCRDD----------
+        # Gen Profit TCRDD
         # Check if TCRDD is has changed within a tolerance
         if iter_opf > 1
             A_tcrdd = abs(tcrdd[iter_opf] - tcrdd[iter_opf - 1])
@@ -168,7 +162,7 @@ function plots_TCRDD(
             gap_count = 1
 
         elseif iter_opf > 1 && same_tcrdd
-            # Dont recalculte the approximation, just evaluate it for the current Pg_slack
+            # Don't recalculte the approximation, just evaluate it for the current Pg_slack
             gap_count = gap_count +1;
             if gap_count < gap
                 lmp_slack_apx_tcrdd[iter_opf] =
@@ -211,7 +205,7 @@ function plots_TCRDD(
         end
     end
 
-    #----------Display Plots----------
+    # Display Plots
     disp_plots(
         bids,
         gen_profit,

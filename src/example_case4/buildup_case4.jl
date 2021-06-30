@@ -1,4 +1,4 @@
-# ---------- Build up functions ----------
+# Build up functions
 """
     function filter_kwargs(; kwargs...)
 
@@ -9,7 +9,7 @@ function filter_kwargs(; kwargs...)
     return (system_kwargs)
 end
 
-# ---------- Buses of the System ----------
+# Buses of the System
 """
     function nodes4_tcrd()
 
@@ -61,18 +61,16 @@ function nodes4_tcrd()
             nothing,
         ),
     ]
-    return (nodes4)
+    return nodes4
 end
 
-# ---------- Lines of the System ----------
+# Lines of the System
 """
     function branches4_tcrd(nodes4_tcrd)
 
 Returns the data with the information of the Lines of the system for the example case 4
 
 # Arguments
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `nodes4_tcrd`:                            Array with the information of the buses of
                                             the example system case 4
 """
@@ -139,10 +137,10 @@ function branches4_tcrd(nodes4_tcrd)
             1.0,
         ),
     ]
-    return (branches4)
+    return branches4
 end
 
-# ---------- Thermal Generators of the System ----------
+# Thermal Generators of the System
 """
     function thermal_generators4_tcrd(nodes4_tcrd)
 
@@ -150,8 +148,6 @@ Returns the data with the information of the thermal generators of the system fo
 example case 4
 
 # Arguments
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `nodes4_tcrd`:                            Array with the information of the buses of
                                             the example system case 4
 """
@@ -173,8 +169,7 @@ function thermal_generators4_tcrd(nodes4_tcrd)
             ramp_limits = nothing,
             operation_cost = ThreePartCost((0.175000, 10.0000), 0.0, 0.0, 0.0),
             base_power = 100.0,
-        ), #operation_cost = ThreePartCost((0.175000, 10.0000), 0.0, 0.0, 0.0),
-        #operation_cost = ThreePartCost((0.000, 0.0000), 0.0, 0.0, 0.0),
+        ),
         ThermalStandard(
             name = "GBus2",
             available = true,
@@ -192,7 +187,6 @@ function thermal_generators4_tcrd(nodes4_tcrd)
             operation_cost = ThreePartCost((0.497000, 10.0000), 0.0, 0.0, 0.0),
             base_power = 100.0,
         ),
-        #operation_cost = ThreePartCost((0.497000, 10.0000), 0.0, 0.0, 0.0),
         ThermalStandard(
             name = "GBus3",
             available = true,
@@ -210,7 +204,6 @@ function thermal_generators4_tcrd(nodes4_tcrd)
             operation_cost = ThreePartCost((0.260000, 20.000), 0.0, 0.0, 0.0),
             base_power = 100.0,
         ),
-        #operation_cost = ThreePartCost((0.260000, 20.000), 0.0, 0.0, 0.0),
         ThermalStandard(
             name = "GBus4",
             available = true,
@@ -228,20 +221,17 @@ function thermal_generators4_tcrd(nodes4_tcrd)
             operation_cost = ThreePartCost((0.325000, 20.000), 0.0, 0.0, 0.0),
             base_power = 100.0,
         ),
-        #operation_cost = ThreePartCost((0.325000, 20.000), 0.0, 0.0, 0.0),
     ]
-    return (thermal4)
+    return thermal4
 end
 
-# ---------- Loads of the System ----------
+# Loads of the System
 """
     function loads4_tcrd(nodes4_tcrd)
 
 Returns the data with the information of the Loads of the system for the example case 4
 
 # Arguments
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `nodes4_tcrd`:                            Array with the information of the buses of
                                             the example system case 4
 """
@@ -270,5 +260,5 @@ function loads4_tcrd(nodes4_tcrd)
             0.0,
         ),
     ]
-    return (loads4)
+    return loads4
 end

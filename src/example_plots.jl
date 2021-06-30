@@ -10,16 +10,16 @@ for the calculation of the profit function. The TCRDD algorithm is taken from [1
     Transactions on Power Systems, vol. 26, no. 3, pp. 1380-1388, Aug. 2011,
     doi: 10.1109/TPWRS.2010.2083702.
 """
-# ----------Packages----------
+# Packages
 using Ipopt
 using MaximumGeneratorProfitTCRDD
 using PowerSystems
 using PowerSimulations
 
-# ----------Build Test Case----------
+# Build Test Case
 sys = MaximumGeneratorProfitTCRDD.c_sys_case4()
 
-# ----------Settings----------
+# Settings
 # Number of OPF points to plot the profit function
 div = 500
 # Network representation
@@ -36,7 +36,7 @@ dual_gen_tol = 1e-1
 # Flag to get an extra plot for Example Case 4
 examplecase4 = true
 
-# ----------Run and plot the OPF Loops----------
+# Run and plot the OPF Loops
 plots_TCRDD(
     sys;
     div,

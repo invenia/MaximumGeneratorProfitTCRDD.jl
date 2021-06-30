@@ -5,8 +5,6 @@ Identify generators which Active Power is binding (Skips Slack), locate their bu
 return the corresponding PTDF matrix
 
 # Arguments
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `sys::System`:                            Power system in p.u. (from PowerSystems.jl)
 - `res::PowerSimulations.
     OperationsProblemResults`:              Results of the solved OPF for the system
@@ -15,13 +13,9 @@ return the corresponding PTDF matrix
                                             PTDF_matrix = PTDF(sys), see PowerSystems.jl
 
 # Keywords
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `dual_gen_tol::Float64 = 1e-1`:           Tolerance to identify any binding generators
 
 # Throws
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `ERROR`:                                  PTDF_matrix has no field data. The argument must
                                             be a direct output from PTDF_matrix = PTDF(sys)
                                             see PowerSystems.jl
@@ -32,7 +26,7 @@ function get_PTDF_thermal_bindingPg(
     PTDF_matrix ::Array;
     dual_gen_tol::Float64 = 1e-1
     )
-    # ----------Define elements----------
+    # Define elements
     gen_loc = 0
     gen_bindPg = 0 #number of gen binding (start of counter)
     gens_thermal_bindPg_busnumber = Array{Int64}(undef,0)
@@ -40,14 +34,14 @@ function get_PTDF_thermal_bindingPg(
     (nl,nb)=size(PTDF_matrix)
     PTDF_bindingPg = Array{Float64}(undef,(nl,0))
 
-    # ----------Get all thermal Generators----------
+    # Get all thermal Generators
     gens_thermal = get_components(ThermalStandard, sys)
 
-    # ----------Get dual variables from the OPF results----------
+    # Get dual variables from the OPF results
     dualPgub = get_duals(res)[:P_ub__ThermalStandard__RangeConstraint]
     dualPglb = get_duals(res)[:P_lb__ThermalStandard__RangeConstraint]
 
-    # ----------Identify Generators and Locate their Buses----------
+    # Identify Generators and Locate their Buses
     for gen_thermal in gens_thermal
         gen_loc = gen_loc +1
         if get_bustype(gen_thermal.bus) ≠ BusTypes.REF  #skips slack
@@ -63,7 +57,7 @@ function get_PTDF_thermal_bindingPg(
         end
     end
 
-    # ----------Parse the PTDF matrix----------
+    # Parse the PTDF matrix
     if gens_thermal_bindPg_busnumber == Any[]
         PTDF_bindingPg = Array{Float64}(undef,(nl,0))
     else
@@ -71,5 +65,5 @@ function get_PTDF_thermal_bindingPg(
         PTDF_bindingPg = PTDF_matrix[:,gens_thermal_bindPg_busnumber]
     end
 
-    return (gens_thermal_bindPg_busnumber, PTDF_bindingPg)
+    return gens_thermal_bindPg_busnumber, PTDF_bindingPg
 end

@@ -21,8 +21,6 @@ until the bid that maximises the generators profit is found [1].
     doi: 10.1109/TPWRS.2010.2083702.
 
 # Arguments
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `sys::System`:                            Power system in p.u. (from PowerSystems.jl)
 - `bid_lo::Float64`:                        Lower Bid for the slack generator [pu]
 - `bid_hi::Float64`:                        Higher Bid for the slack generator [pu]
@@ -31,8 +29,6 @@ until the bid that maximises the generators profit is found [1].
 - `stop::Bool`:                             Flag to stop the algorithm
 
 # Keywords
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `maxit_bi::Int64 = 30`:                   Maximum number of iterations for Bisection Loop
 - `network::DataType = StandardPTDFModel`:  Network Representation of the Power System
 - `solver= optimizer_with_attributes
@@ -63,12 +59,11 @@ function bisection_loop!(
     dual_lines_tol::Float64 = 1e-1,
     dual_gen_tol::Float64 = 1e-1
     )
-    # ----------------------------------------
-    # ------------Bisection Loop--------------
-    # ----------------------------------------
+
+    # Bisection Loop
     println("Bisection Loop")
 
-    # ----------Initial conditions----------
+    # Initial conditions
     iter_bi = 0
     same_tan_inv_lo_hi = false
     intersect_tan_inv_lo_hi = false
@@ -77,11 +72,10 @@ function bisection_loop!(
     bid_intersect = bid_mid
     bid_opt = bid_mid
 
-    # ----------Get Slack Generator----------
-    (gen_thermal_slack, gen_thermal_slack_id, gen_thermal_slack_name) =
-        get_thermal_slack(sys)
+    # Get Slack Generator
+    gen_thermal_slack, gen_thermal_slack_id, gen_thermal_slack_name = get_thermal_slack(sys)
 
-    # ----------Algorithm Loops----------
+    #  Algorithm Loops
     while (iter_bi <= maxit_bi && stop == false)
         iter_bi = iter_bi + 1
         # step 1 BL
@@ -93,16 +87,16 @@ function bisection_loop!(
             break
         # step 2 BL
         else
-            # ----------Calculate bisection point bid_mid----------
+            # Calculate bisection point bid_mid
             # Calculations when bid = bid_lo
             # Change active power Limits to Bidmin = Pmin_orig Bidmax = bid_lo
             set_active_power_limits!(gen_thermal_slack, (min = Pmin_orig, max = bid_lo))
             # Solve PTDF OPF
-            (lmp_lo, res_lo) = opf_PTDF(sys; network, solver)
+            lmp_lo, res_lo = opf_PTDF(sys; network, solver)
             # Calculate TCRDD
             tcrdd_slack_lo = f_TCRDD(sys, res_lo; dual_lines_tol, dual_gen_tol)
             # Evaluate Profit
-            (profit_argmax_lo, bid_argmax_lo) = bid_argmax_profit(
+            profit_argmax_lo, bid_argmax_lo = bid_argmax_profit(
                 sys,
                 res_lo,
                 BaseMVA,
@@ -113,7 +107,7 @@ function bisection_loop!(
                 Pmax_orig;
                 segm_bid_argmax_profit,
                 print_plots
-                )
+            )
 
             # Calculations when bid = bid_hi
             # Change active power Limits to Bidmin = Pmin_orig Bidmax = bid_hi
@@ -123,7 +117,7 @@ function bisection_loop!(
             # Calculate TCRDD
             tcrdd_slack_hi = f_TCRDD(sys, res_hi; dual_lines_tol, dual_gen_tol)
             # Evaluate Profit
-            (profit_argmax_hi, bid_argmax_hi) = bid_argmax_profit(
+            profit_argmax_hi, bid_argmax_hi = bid_argmax_profit(
                 sys,
                 res_hi,
                 BaseMVA,
@@ -134,7 +128,7 @@ function bisection_loop!(
                 Pmax_orig;
                 segm_bid_argmax_profit,
                 print_plots
-                )
+            )
 
             # Check if the inverse tangent of the RDC is the same for both functions
             comparison_res = compare_tan_inv_RDC(
@@ -153,23 +147,23 @@ function bisection_loop!(
                 segm_bid_argmax_profit,
                 epsilon,
                 print_plots
-                )
+            )
             # Unpack the results of the comparison
-            (same_tan_inv_lo_hi, intersect_tan_inv_lo_hi, bid_intersect) = comparison_res
+            same_tan_inv_lo_hi, intersect_tan_inv_lo_hi, bid_intersect = comparison_res
 
-            # ----------Find bid_mid depending on the the case----------
+            # Find bid_mid depending on the the case
             if same_tan_inv_lo_hi
                 #tan_inv_RDC is the same for both hi and lo
                 bid_mid = bid_argmax_lo
             elseif !intersect_tan_inv_lo_hi ||
                     ( intersect_tan_inv_lo_hi &&
                         (bid_intersect < bid_lo || bid_hi < bid_intersect) )
-                #they dont intersect or intersect out of range, do traditional bisection
+                # They dont intersect or intersect out of range, do traditional bisection
                 bid_mid = 0.5*(bid_hi + bid_lo)
             else
-                #Functions are different but they intersect within range
-                #-----Determine profit maximiser range (Table 1 of reference [1])-----
-                #Check where is the hump
+                # Functions are different but they intersect within range
+                # Determine profit maximiser range (Table 1 of reference [1])
+                # Check where is the hump
                 belong_bid_lo_intsct = false
                 belong_bid_hi_intsct = false
                 if (bid_lo <= bid_argmax_lo && bid_argmax_lo <= bid_intersect)
@@ -178,7 +172,7 @@ function bisection_loop!(
                 if (bid_intersect <= bid_argmax_hi && bid_argmax_hi <= bid_hi)
                     belong_bid_hi_intsct = true
                 end
-                #Select bid_mid
+                # Select bid_mid
                 if !belong_bid_lo_intsct && !belong_bid_hi_intsct #no hump
                     bid_mid = bid_intersect
                 elseif belong_bid_lo_intsct && !belong_bid_hi_intsct #left hump
@@ -186,7 +180,7 @@ function bisection_loop!(
                 elseif !belong_bid_lo_intsct && belong_bid_hi_intsct #right hump
                     bid_mid = bid_argmax_hi
                 elseif belong_bid_lo_intsct && belong_bid_hi_intsct #double hump
-                    #Select the side based on profit_argmax
+                    # Select the side based on profit_argmax
                     if profit_argmax_hi >= profit_argmax_lo
                         bid_mid = bid_argmax_hi
                     else
@@ -200,11 +194,11 @@ function bisection_loop!(
         # Change active power Limits to Bidmin = Pmin_orig Bidmax = bid_mid
         set_active_power_limits!(gen_thermal_slack, (min = Pmin_orig, max = bid_mid))
         # Solve PTDF OPF
-        (lmp_mid, res_mid) = opf_PTDF(sys; network, solver)
+        lmp_mid, res_mid = opf_PTDF(sys; network, solver)
         # Calculate TCRDD
         tcrdd_slack_mid = f_TCRDD(sys, res_mid; dual_lines_tol, dual_gen_tol)
         # Evaluate Profit
-        (profit_argmax_mid, bid_argmax_mid) = bid_argmax_profit(
+        profit_argmax_mid, bid_argmax_mid = bid_argmax_profit(
             sys,
             res_mid,
             BaseMVA,
@@ -215,7 +209,7 @@ function bisection_loop!(
             Pmax_orig;
             segm_bid_argmax_profit,
             print_plots
-            )
+        )
 
         if intersect_tan_inv_lo_hi
             # Calculations when bid = bid_intersect
@@ -223,9 +217,9 @@ function bisection_loop!(
             set_active_power_limits!(
                 gen_thermal_slack,
                 (min = Pmin_orig, max = bid_intersect)
-                )
+            )
             # Solve PTDF OPF
-            (lmp_intersect, res_intersect) = opf_PTDF(sys; network, solver)
+            lmp_intersect, res_intersect = opf_PTDF(sys; network, solver)
         end
 
         # Step 4 BL
@@ -246,18 +240,18 @@ function bisection_loop!(
                 set_active_power_limits!(
                     gen_thermal_slack,
                     (min = Pmin_orig, max = bid_int_epsil)
-                    )
+                )
                 # Solve PTDF OPF
-                (lmp_int_epsil, res_int_epsil) = opf_PTDF(sys; network, solver)
+                lmp_int_epsil, res_int_epsil = opf_PTDF(sys; network, solver)
                 # Calculate TCRDD
                 tcrdd_slack_int_epsil = f_TCRDD(
                     sys,
                     res_int_epsil;
                     dual_lines_tol,
                     dual_gen_tol
-                    )
+                )
                 # Evaluate Profit
-                (profit_argmax_int_epsil, bid_argmax_int_epsil) = bid_argmax_profit(
+                profit_argmax_int_epsil, bid_argmax_int_epsil = bid_argmax_profit(
                     sys,
                     res_int_epsil,
                     BaseMVA,
@@ -268,7 +262,7 @@ function bisection_loop!(
                     Pmax_orig;
                     segm_bid_argmax_profit,
                     print_plots
-                    )
+                )
                 if bid_argmax_int_epsil <= bid_int_epsil
                     bid_opt_found = true
                     bid_opt = bid_intersect
@@ -283,18 +277,18 @@ function bisection_loop!(
                 set_active_power_limits!(
                     gen_thermal_slack,
                     (min = Pmin_orig, max = bid_int_epsil)
-                    )
+                )
                 # Solve PTDF OPF
-                (lmp_int_epsil, res_int_epsil) = opf_PTDF(sys; network, solver)
+                lmp_int_epsil, res_int_epsil = opf_PTDF(sys; network, solver)
                 # Calculate TCRDD
                 tcrdd_slack_int_epsil = f_TCRDD(
                     sys,
                     res_int_epsil;
                     dual_lines_tol,
                     dual_gen_tol
-                    )
+                )
                 # Evaluate Profit
-                (profit_argmax_int_epsil, bid_argmax_int_epsil) = bid_argmax_profit(
+                profit_argmax_int_epsil, bid_argmax_int_epsil = bid_argmax_profit(
                     sys,
                     res_int_epsil,
                     BaseMVA,
@@ -305,7 +299,7 @@ function bisection_loop!(
                     Pmax_orig;
                     segm_bid_argmax_profit,
                     print_plots
-                    )
+                )
                 if bid_argmax_int_epsil >= bid_int_epsil
                     bid_opt_found = true
                     bid_opt = bid_intersect
@@ -337,5 +331,5 @@ function bisection_loop!(
         end
     end
 
-    return(stop, iter_bi, bid_opt_found, bid_opt, bid_mid)
+    return stop, iter_bi, bid_opt_found, bid_opt, bid_mid
 end
