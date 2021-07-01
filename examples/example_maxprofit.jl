@@ -9,13 +9,20 @@ Transmission Constrained Residual Demand Derivative (TCRDD) [1].
     doi: 10.1109/TPWRS.2010.2083702.
 """
 # Packages
+using DataFrames
+using Dates
+using DataStructures
 using Ipopt
 using MaximumGeneratorProfitTCRDD
 using PowerSystems
 using PowerSimulations
+using Test
+using TimeSeries
 
 # Build Test Case
-sys = MaximumGeneratorProfitTCRDD.c_sys_case4()
+include("data/example_case4/buildup_case4.jl")
+include("data/example_case4/c_sys_case4.jl")
+sys = c_sys_case4()
 
 # Settings
 # Solver for OPF
@@ -55,4 +62,4 @@ bid_opt_found, bid_opt, bid_lo, bid_hi, iter_scr, iter_bi = maxGenProfit_tcrdd(
     print_plots,
     network,
     solver
-    )
+)
