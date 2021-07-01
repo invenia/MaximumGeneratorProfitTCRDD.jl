@@ -22,16 +22,12 @@ Generator Segments:
     doi: 10.1109/TPWRS.2010.2083702.
 
 #Arguments
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `sys::System`:                            Power system in p.u. (from PowerSystems.jl)
 - `res::PowerSimulations.
     OperationsProblemResults`:              Results of the solved OPF for the system
                                              (from PowerSimulations.jl)
 
 #Keywords
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `dual_lines_tol::Float64 = 1e-1`:         Tolerance to identify any binding lines
 - `dual_gen_tol::Float64 = 1e-1`:           Tolerance to identify any binding generators
 
@@ -42,7 +38,7 @@ function f_TCRDD(
     dual_lines_tol::Float64 = 1e-1,
     dual_gen_tol::Float64 = 1e-1
     )
-    # ----------PTDF Matrices----------
+    # PTDF Matrices
     # Calculate PTDF matrix of the system
     PTDF_matrix = PTDF(sys)
 
@@ -52,13 +48,13 @@ function f_TCRDD(
 
     # PTDF Generators separation
     # PTDF Slack is zeros
-    (gens_thermal_slack_busnumber, PTDFb_slack) = get_PTDF_thermal_slack(
+    gens_thermal_slack_busnumber, PTDFb_slack = get_PTDF_thermal_slack(
         sys,
         PTDF_binding_lines
     )
     ngens_thermal_slack = length(gens_thermal_slack_busnumber)
     # PTDF Pg Binding Gens (Checked with Duals)
-    (gens_thermal_bindPg_busnumber,PTDFb_bindingPg) = get_PTDF_thermal_bindingPg(
+    gens_thermal_bindPg_busnumber, PTDFb_bindingPg = get_PTDF_thermal_bindingPg(
         sys,
         res,
         PTDF_binding_lines;
@@ -76,7 +72,7 @@ function f_TCRDD(
 
     ngens_thermal_nonzeroslope = length(gens_thermal_nonzeroslope_busnumber)
     # PTDF Pmax Non Constant Price
-    (gens_thermal_constprice_busnumber,PTDFb_constprice) = get_PTDF_thermal_constprice(
+    gens_thermal_constprice_busnumber,PTDFb_constprice = get_PTDF_thermal_constprice(
         sys,
         res,
         PTDF_binding_lines;
@@ -85,7 +81,7 @@ function f_TCRDD(
     ngens_thermal_constprice = length(gens_thermal_constprice_busnumber)
 
     # Load PTDF separation
-    (PQ_buses, PTDF_PQLoad) = get_PTDF_load(sys, PTDF_binding_lines)
+    PQ_buses, PTDF_PQLoad = get_PTDF_load(sys, PTDF_binding_lines)
 
     # Obtaining vector of ones of size Slack, Pmax Pg, nonzeroslopes, constant price
     ones_slack = ones(ngens_thermal_slack)
@@ -105,7 +101,7 @@ function f_TCRDD(
 
     # Calculation of the second derivative of the objective function w.r.t
     # to the active power of the non zero slope generators
-    (d2f_PgPgnonzeroslope, d2f_PgPgnonzeroslope_MatrixInfo) = d2f_PgPg_nonzeroslope(
+    d2f_PgPgnonzeroslope, d2f_PgPgnonzeroslope_MatrixInfo = d2f_PgPg_nonzeroslope(
         sys,
         res;
         dual_gen_tol
@@ -201,5 +197,5 @@ function f_TCRDD(
         tcrdd_slack = -(ones_nonzeroslope') * dPgnonzeroslope_dlam_d_value
 
     end
-    return (tcrdd_slack)
+    return tcrdd_slack
 end

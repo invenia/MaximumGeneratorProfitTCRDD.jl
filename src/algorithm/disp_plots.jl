@@ -4,8 +4,6 @@
 This function plots the output results from "plots_TCRDD.jl"
 
 #Arguments
-- `Name`                                        Description
--------------------------------------------------------------------------------------------
 - `bids::Array{Float64, 1}`                     Bids
 - `gen_profit::Array{Float64, 1}`               Generator Profit
 - `gen_profit_tcrdd::Array{Float64, 1}`         Approximated Generator Profit
@@ -22,8 +20,6 @@ This function plots the output results from "plots_TCRDD.jl"
 
 
 #Keywords
-- `Name`                                        Description
--------------------------------------------------------------------------------------------
 - `examplecase4::Bool = false`                  If Case 4 example, provide an extra plot
 - `branch1_3::Array{Float64, 1}`                Active Power Flow for Branch (Bus1 to Bus3)
 
@@ -45,10 +41,10 @@ function disp_plots(
     examplecase4::Bool = false,
     branch1_3::Array{Float64, 1}
     )
-    # ----------Plot using Plotly----------
+    # Plot using Plotly
     plotly()
 
-    # ----------Slack Generator Profit----------
+    # Slack Generator Profit
     gen_profit_both = Array{Float64}(undef, (div + 1, 2));
     gen_profit_both[:, 1] = gen_profit;
     gen_profit_both[:, 2] = gen_profit_tcrdd;
@@ -58,7 +54,7 @@ function disp_plots(
     a = ylabel!("profit(\$/hr)")
     display(a)
 
-    # ----------Slack Generator Profit No Cost----------
+    # Slack Generator Profit No Cost
     gen_profit_both_noCost = Array{Float64}(undef, (div + 1, 2));
     gen_profit_both_noCost[:, 1] = gen_profit_noCost;
     gen_profit_both_noCost[:, 2] = gen_profit_tcrdd_noCost;
@@ -69,21 +65,21 @@ function disp_plots(
     a = ylabel!("profit(\$/hr)")
     display(a)
 
-    # ----------Slack Generator Cost----------
+    # Slack Generator Cost
     plot(bids, gen_cost_slack, title = "Generator Cost",
         label = ["Cost Function Real" "Cost Function TCRDD"], legend = :bottomright);
     xlabel!("Bid q(pu)");
     a = ylabel!("Cost(\$/hr)")
     display(a)
 
-    # ----------Slack Generator Active Power Output----------
+    # Slack Generator Active Power Output
     plot(bids, Pg_slack, title = "Dispatched vs Bid on Slack",
         label = ["Dispatched vs Bid Slack"], legend = :bottomright);
     xlabel!("Bid q(pu)");
     a = ylabel!("P Gen (pu)")
     display(a)
 
-    # ----------Slack Bus LMP----------
+    # Slack Bus LMP
     lmp_both = Array{Float64}(undef,(div + 1, 2));
     lmp_both[:, 1] = lmp_slack;
     lmp_both[:, 2] = lmp_slack_apx_tcrdd;
@@ -93,21 +89,21 @@ function disp_plots(
     a = ylabel!("LMP (\$/hrpu)")
     display(a)
 
-    # ----------Residual Demand Curve----------
+    # Residual Demand Curve
     plot(bids, residualD_slack_Pg, title = " Residual Demand Curve vs Bids",
         label = ["RDC"], legend = :topright);
     xlabel!("Bid q(pu)");
     a = ylabel!("RDC (pu)")
     display(a)
 
-    # ----------TCRDD----------
+    # TCRDD
     plot(bids, tcrdd ,title = "TCRDD vs bids",
         label = ["TCRDD vs Bid Slack"], legend = :bottomright);
     xlabel!("Bid q(pu)");
     a = ylabel!("TCRDD (pu)")
     display(a)
 
-    # ----------RDC & TCRDD vs Bid----------
+    # RDC & TCRDD vs Bid
     rdc_tcrdd = Array{Float64}(undef,(div + 1, 2));
     rdc_tcrdd[:, 1] = residualD_slack_Pg;
     rdc_tcrdd[:, 2] = tcrdd;
@@ -117,14 +113,14 @@ function disp_plots(
     a = ylabel!("RDC & TCRDD")
     display(a)
 
-    # ----------Residual Demand Curve vs LMP----------
+    # Residual Demand Curve vs LMP
     plot(lmp_slack, residualD_slack_Pg, title = " Residual Demand Curve vs LMP",
         label = ["RDC"], legend = :topright);
     xlabel!("LMP (\$/hrpu)");
     a = ylabel!("RDC (pu)")
     display(a)
 
-    # ----------TCRDD vs LMP Slack----------
+    # TCRDD vs LMP Slack
     plot(lmp_slack, tcrdd, title = "TCRDD vs LMP", label = ["TCRDD vs LMP Slack"],
         legend = :bottomright);
     xlabel!("LMP (\$/hrpu)");
@@ -132,7 +128,7 @@ function disp_plots(
     display(a)
 
 
-    # ----------RDC & TCRDD vs LMP Slack----------
+    # RDC & TCRDD vs LMP Slack
     rdc_tcrdd = Array{Float64}(undef,(div + 1, 2));
     rdc_tcrdd[:, 1] = residualD_slack_Pg;
     rdc_tcrdd[:, 2] = tcrdd;
@@ -142,18 +138,19 @@ function disp_plots(
     a = ylabel!("RDC & TCRDD")
     display(a)
 
-    # ----------Number of Binding lines----------
+    # Number of Binding lines
     plot(bids, nbind_lines, title = "Number of Binding lines", label = ["Binding Lines"],
         legend = :bottomright);
     xlabel!("Bid q(pu)");
     a = ylabel!("Number binding lines")
     display(a)
 
-    #----------Only for example case4 Pf branch Bus1 to Bus3----------
-    plot(bids, branch1_3, title = "Pf branch Bus1 to Bus3",
-        label = ["Pf line 1 to 3"], legend = :bottomright);
-    xlabel!("Bid q(pu)");
-    a = ylabel!("Active Power Flow Pf (pu)")
-    display(a)
-
+    if examplecase4
+        # Only for example case4 Pf branch Bus1 to Bus3
+        plot(bids, branch1_3, title = "Pf branch Bus1 to Bus3",
+            label = ["Pf line 1 to 3"], legend = :bottomright);
+        xlabel!("Bid q(pu)");
+        a = ylabel!("Active Power Flow Pf (pu)")
+        display(a)
+    end
 end

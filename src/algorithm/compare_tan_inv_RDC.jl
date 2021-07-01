@@ -15,8 +15,6 @@ Constrained Residual Demand Derivative (TCRDD) [1].
     doi: 10.1109/TPWRS.2010.2083702.
 
 # Arguments
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `sys::System`:                            Power system in p.u. (from PowerSystems.jl)
 - `BaseMVA::Float64`:                       Apparent Power Base for the system [MVA]
 - `lmp_lo::DataFrame`:                      LMP of all buses of the system (lower bid)
@@ -29,16 +27,12 @@ Constrained Residual Demand Derivative (TCRDD) [1].
 - `Pmax_orig::Float64`:                     Active power maximum limit Slack gen [pu]
 
 # Keywords
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `segm_bid_argmax_profit::Int64 = 50000:   Segments to evaluate the approx profit function
 - `epsilon::Float64 = 0.01`:                Tolerance to identify if they intersect and/or
                                              if they are the same function.
 - `print_plots::Bool = true`:               Flag to print plots
 
 # Throws
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `NotFoundError`:                          No Slack bus found in the system
 """
 function compare_tan_inv_RDC(
@@ -59,7 +53,7 @@ function compare_tan_inv_RDC(
     print_plots::Bool = true
     )
 
-    # ----------Get slack bus----------
+    # Get slack bus
     bus_slack_name = "Empty"
     has_slack = false
     buses = get_components(Bus, sys)
@@ -70,7 +64,7 @@ function compare_tan_inv_RDC(
         end
     end
 
-    # ----------storage the lmp of the slack bus----------
+    # Storage the lmp of the slack bus
     if has_slack
         lmp_slack_lo = lmp_lo[1, bus_slack_name]
         lmp_slack_hi = lmp_hi[1, bus_slack_name]
@@ -78,27 +72,27 @@ function compare_tan_inv_RDC(
         error("NotFoundError: No Slack found in the system")
     end
 
-    #Get Slack Generator component ,ID and name
+    # Get Slack Generator component ,ID and name
     (gen_thermal_slack,gen_thermal_slack_id,gen_thermal_slack_name)=get_thermal_slack(sys)
 
-    #Get Optimised Pg of slack lo and hi
+    # Get Optimised Pg of slack lo and hi
     all_PGenThermal_lo = get_variables(res_lo)[:P__ThermalStandard] #Optimised PGen
     Pg_slack_lo = all_PGenThermal_lo[1, gen_thermal_slack_name]
     all_PGenThermal_hi = get_variables(res_hi)[:P__ThermalStandard] #Optimised PGen
     Pg_slack_hi = all_PGenThermal_hi[1, gen_thermal_slack_name]
-    # -----------Correct tcrdd pu using BaseMVA----------
+    # Correct tcrdd pu using BaseMVA
     tcrdd_slack_hi = tcrdd_slack_hi/(BaseMVA^2)
     tcrdd_slack_lo = tcrdd_slack_lo/(BaseMVA^2)
 
     #----------Evaluate both functions for all segments of Pg using the tcrdd----------
     segment = 0
     segm_div = segm_bid_argmax_profit
-    bids = Array{Float64}(undef,segm_div+1)
-    tan_inv_RDC_lo = Array{Float64}(undef, segm_div+1)
-    tan_inv_RDC_hi = Array{Float64}(undef, segm_div+1)
+    bids = Array{Float64}(undef,segm_div + 1)
+    tan_inv_RDC_lo = Array{Float64}(undef, segm_div + 1)
+    tan_inv_RDC_hi = Array{Float64}(undef, segm_div + 1)
     dif_tans = Array{Float64}(undef, segm_div+1)
-    same_tan_inv_lo_hi_num = ones(segm_div+1, 1) #false 0, true 1
-    intersect_tan_inv_lo_hi_num = zeros(segm_div+1, 1) #false 0, true 1
+    same_tan_inv_lo_hi_num = ones(segm_div + 1, 1) #false 0, true 1
+    intersect_tan_inv_lo_hi_num = zeros(segm_div + 1, 1) #false 0, true 1
     step = (Pmax_orig - Pmin_orig)/segm_div
 
     for Pg in Pmin_orig:step:Pmax_orig
@@ -107,7 +101,7 @@ function compare_tan_inv_RDC(
         tan_inv_RDC_hi[segment] = (((1/tcrdd_slack_hi)*(Pg-Pg_slack_hi)) + lmp_slack_hi)
         bids[segment] = Pg
         dif_tans[segment] = abs(tan_inv_RDC_hi[segment] - tan_inv_RDC_lo[segment])
-        #Same function? or #Intersect
+        # Same function? or #Intersect
         if dif_tans[segment] > (epsilon*BaseMVA)
             same_tan_inv_lo_hi_num[segment] = 0.0
         else
@@ -115,25 +109,25 @@ function compare_tan_inv_RDC(
         end
     end
 
-    # ----------Flag if they are the same function----------
+    # Flag if they are the same function
     if sum(same_tan_inv_lo_hi_num) == segm_div + 1.0
         same_tan_inv_lo_hi = true
     else
         same_tan_inv_lo_hi = false
     end
 
-    # ----------Flag if they intersect----------
+    # Flag if they intersect
     if sum(intersect_tan_inv_lo_hi_num) ≠ 0.0
         intersect_tan_inv_lo_hi = true
     else
         intersect_tan_inv_lo_hi = false
     end
 
-    # ----------Find where do they intersect if they do----------
+    # Find where do they intersect if they do
     (int_flag, segm_intersect) = findmax(intersect_tan_inv_lo_hi_num)
     bid_intersect = bids[segm_intersect]
 
-    # ----------Plot both functions----------
+    # Plot both functions
     if print_plots == true
         tan_inv_RDC = Array{Float64}(undef,(segment,2))
         tan_inv_RDC[:, 1] = tan_inv_RDC_lo
@@ -146,5 +140,5 @@ function compare_tan_inv_RDC(
         display(p)
     end
 
-    return (same_tan_inv_lo_hi, intersect_tan_inv_lo_hi, bid_intersect)
+    return same_tan_inv_lo_hi, intersect_tan_inv_lo_hi, bid_intersect
 end

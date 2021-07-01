@@ -13,8 +13,6 @@ active power (Pmin) to the maximum active power (Pmax) of the slack generator. T
 provides the maximum profit is returned.
 
 # Arguments
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `sys::System`:                            Power system in p.u. (from PowerSystems.jl)
 - `res::PowerSimulations.
     OperationsProblemResults`:              Results of the solved OPF for the system
@@ -27,14 +25,10 @@ provides the maximum profit is returned.
 - `Pmax_orig::Float64`:                     Active power maximum limit [pu]
 
 # Keywords
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `segm_bid_argmax_profit::Int64 = 50000:   Segments to evaluate the approx profit function
 - `print_plots::Bool = true`:               Flag to print plots
 
 # Throws
-- `Name`:                                   Description
--------------------------------------------------------------------------------------------
 - `NotFoundError`:                          No Slack bus found in the system
 """
 function bid_argmax_profit(
@@ -49,11 +43,10 @@ function bid_argmax_profit(
     segm_bid_argmax_profit::Int64 = 50000,
     print_plots::Bool = true
     )
-    #Calculate the bid with argmax in a function that gets evaluated.
-    #------------------------------
+    # Calculate the bid with argmax in a function that gets evaluated.
     bus_slack_name = "Empty"
     has_slack = false
-    #Find slackbus
+    # Find slackbus
     buses = get_components(Bus, sys)
     for bus in buses
         if get_bustype(bus) == BusTypes.REF
@@ -61,32 +54,32 @@ function bid_argmax_profit(
             bus_slack_name = bus.name
         end
     end
-    #storage the lmp of the slack bus
+    # Storage the lmp of the slack bus
     if has_slack
         lmp_slack = lmp[1,bus_slack_name]
     else
         error("NotFoundError: No Slack found in the system")
     end
 
-    #Get Slack Generator component ,ID and name
-    (gen_thermal_slack,gen_thermal_slack_id,gen_thermal_slack_name)=get_thermal_slack(sys)
+    # Get Slack Generator component, ID and name
+    gen_thermal_slack,gen_thermal_slack_id,gen_thermal_slack_name = get_thermal_slack(sys)
 
-    #Get Optimised Pg of slack
+    # Get Optimised Pg of slack
     all_PGenThermal = get_variables(res)[:P__ThermalStandard] #Optimised PGen
     Pg_slack = all_PGenThermal[1, gen_thermal_slack_name]
 
-    #Get Slack Generator Costs gen_cost = αPg² + βPg + γ
-    (α, β) = get_cost(get_variable(get_operation_cost(gen_thermal_slack)))
+    # Get Slack Generator Costs gen_cost = αPg² + βPg + γ
+    α, β = get_cost(get_variable(get_operation_cost(gen_thermal_slack)))
     γ = get_fixed(get_operation_cost(gen_thermal_slack))
 
-    #Correct tcrdd pu using the MVA base
+    # Correct tcrdd pu using the MVA base
     tcrdd_slack = tcrdd_slack/(BaseMVA^2)
 
-    #Calculate profits for all segments of Pg using the tcrdd
+    # Calculate profits for all segments of Pg using the tcrdd
     segment = 0
-    bids = Array{Float64}(undef,segm_bid_argmax_profit+1);
-    profits = Array{Float64}(undef,segm_bid_argmax_profit+1);
-    step = (Pmax_orig-Pmin_orig)/segm_bid_argmax_profit;
+    bids = Array{Float64}(undef,segm_bid_argmax_profit + 1);
+    profits = Array{Float64}(undef,segm_bid_argmax_profit + 1);
+    step = (Pmax_orig - Pmin_orig)/segm_bid_argmax_profit;
     for Pg in Pmin_orig:step:Pmax_orig
         segment = segment + 1
         #calculate the lmp aproximation using tcrdd
@@ -103,7 +96,7 @@ function bid_argmax_profit(
         ylabel!("profit(\$/hr)")
         display(p)
     end
-    (profit_argmax, segment_profit_argmax) = findmax(profits)
+    profit_argmax, segment_profit_argmax = findmax(profits)
     bid_argmax = bids[segment_profit_argmax]
-    return (profit_argmax, bid_argmax)
+    return profit_argmax, bid_argmax
 end

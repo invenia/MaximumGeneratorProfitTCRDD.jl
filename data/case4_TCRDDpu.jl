@@ -137,8 +137,7 @@ thermal_generators4_tcrd(nodes4_tcrd) = [
         ramp_limits = nothing,
         operation_cost = ThreePartCost((0.175000, 10.0000), 0.0, 0.0, 0.0),
         base_power = 100.0,
-    ), #operation_cost = ThreePartCost((0.175000, 10.0000), 0.0, 0.0, 0.0),
-       #operation_cost = ThreePartCost((0.000, 0.0000), 0.0, 0.0, 0.0),
+    ),
     ThermalStandard(
         name = "GBus2",
         available = true,
@@ -156,7 +155,6 @@ thermal_generators4_tcrd(nodes4_tcrd) = [
         operation_cost = ThreePartCost((0.497000, 10.0000), 0.0, 0.0, 0.0),
         base_power = 100.0,
     ),
-    #operation_cost = ThreePartCost((0.497000, 10.0000), 0.0, 0.0, 0.0),
     ThermalStandard(
         name = "GBus3",
         available = true,
@@ -174,7 +172,6 @@ thermal_generators4_tcrd(nodes4_tcrd) = [
         operation_cost = ThreePartCost((0.260000, 20.000), 0.0, 0.0, 0.0),
         base_power = 100.0,
     ),
-    #operation_cost = ThreePartCost((0.260000, 20.000), 0.0, 0.0, 0.0),
     ThermalStandard(
         name = "GBus4",
         available = true,
@@ -192,8 +189,8 @@ thermal_generators4_tcrd(nodes4_tcrd) = [
         operation_cost = ThreePartCost((0.325000, 20.000), 0.0, 0.0, 0.0),
         base_power = 100.0,
     ),
-    #operation_cost = ThreePartCost((0.325000, 20.000), 0.0, 0.0, 0.0),
 ]
+
 #time series per zone
 loadz1_ts = ones(Float64, 24)
 
@@ -227,7 +224,6 @@ timeseries_DA4_tcrd = [
     TimeArray(dates, loadz1_ts),
 ];
 
-#------------------------------------------------------------------------
 function filter_kwargs(; kwargs...)
     system_kwargs = filter(x -> in(first(x), PSY.SYSTEM_KWARGS), kwargs)
     return system_kwargs
