@@ -54,4 +54,4 @@ plots_TCRDD(
     dual_lines_tol,
     dual_gen_tol,
     examplecase4
-    )
+)

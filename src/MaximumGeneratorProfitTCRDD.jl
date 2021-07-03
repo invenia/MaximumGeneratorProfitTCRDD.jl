@@ -57,28 +57,12 @@ include("plots_TCRDD.jl")
 # Type
 
 # Accessor functions
-#export get_binding_lines
-#export get_Pg_thermal_slack
-#export get_Pg_thermal_bindingPg
-#export get_Pg_thermal_constprice
-#export get_Pg_thermal_nonzeroslope
-#export get_PTDF_bindingLines
-#export get_PTDF_load
-#export get_PTDF_thermal_bindingPg
-#export get_PTDF_thermal_constprice
-#export get_PTDF_thermal_nonzeroslope
-#export get_PTDF_thermal_slack
-#export get_thermal_bindingPg
-#export get_thermal_nonzeroslope
-#export get_thermal_constprice
-#export get_thermal_slack
 
 # Useful Calculation Functions
 #export change_slack!
-#export residual_demand
 
 # Main Functions
 export maxGenProfit_tcrdd
-#export plots_TCRDD
+export plots_TCRDD
 
 end
