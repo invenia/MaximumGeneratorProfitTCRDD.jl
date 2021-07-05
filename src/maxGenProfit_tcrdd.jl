@@ -52,8 +52,8 @@ function maxGenProfit_tcrdd(
     maxit_bi::Int64 = 30,
     epsilon::Float64 = 0.01,
     print_results::Bool =true,
-    print_progress::Bool=true,
-    print_plots::Bool = true,
+    print_progress::Bool=false,
+    print_plots::Bool = false,
     network::DataType = StandardPTDFModel,
     solver = optimizer_with_attributes(Ipopt.Optimizer)
     )

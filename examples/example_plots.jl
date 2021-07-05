@@ -11,13 +11,20 @@ for the calculation of the profit function. The TCRDD algorithm is taken from [1
     doi: 10.1109/TPWRS.2010.2083702.
 """
 # Packages
+using DataFrames
+using Dates
+using DataStructures
 using Ipopt
 using MaximumGeneratorProfitTCRDD
 using PowerSystems
 using PowerSimulations
+using Test
+using TimeSeries
 
 # Build Test Case
-sys = MaximumGeneratorProfitTCRDD.c_sys_case4()
+include("data/example_case4/buildup_case4.jl")
+include("data/example_case4/c_sys_case4.jl")
+sys = c_sys_case4()
 
 # Settings
 # Number of OPF points to plot the profit function
@@ -47,4 +54,4 @@ plots_TCRDD(
     dual_lines_tol,
     dual_gen_tol,
     examplecase4
-    )
+)
