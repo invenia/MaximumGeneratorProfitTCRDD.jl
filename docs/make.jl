@@ -1,7 +1,6 @@
 using MaximumGeneratorProfitTCRDD
 using Documenter
 
-#=
 makedocs(;
     modules=[MaximumGeneratorProfitTCRDD],
     authors="Invenia Technical Computing Corporation",
@@ -19,4 +18,3 @@ makedocs(;
     strict=true,
     checkdocs=:exports,
 )
-=#
