@@ -39,6 +39,7 @@ function residual_demand_virt!(
 
     # Define elements
     allPg_but_s = zeros(length(gen_virt_names))
+    allPg_but_virt = 0
 
     # Get all thermal generators
     gens_thermal = get_components(ThermalStandard, sys)
@@ -50,7 +51,11 @@ function residual_demand_virt!(
             if get_name(gen_thermal) ≠ gen_virt_name
                 allPg_but_s[i] = allPg_but_s[i] + all_PGenThermal[1, get_name(gen_thermal)]
             end
+            if get_name(gen_thermal) ∉ gen_virt_names
+                allPg_but_virt = allPg_but_virt + all_PGenThermal[1, get_name(gen_thermal)]
+            end
         end
+
     end
 
     # Get all loads of the system
@@ -65,8 +70,9 @@ function residual_demand_virt!(
     residualD_virt_tot = 0
     for (i, gen_virt_name) in enumerate(gen_virt_names)
         residualD_virt[iter_opf, i] = total_Pload - allPg_but_s[i]
-        residualD_virt_tot = residualD_virt_tot + residualD_virt[iter_opf, i]
     end
+
+    residualD_virt_tot = total_Pload - allPg_but_virt
 
     return residualD_virt, residualD_virt_tot
 end

@@ -41,8 +41,8 @@ function plots_virtTCRDD(
     sys::System,
     sender_buses_names::Array{String},
     weights::Array{String},
-    Bidmin::Float64,
-    Bidmax::Float64;
+    bidMin::Float64,
+    bidMax::Float64;
     div::Int64 = 1000,
     network::DataType = StandardPTDFModel,
     solver = optimizer_with_attributes(Ipopt.Optimizer),
@@ -52,9 +52,9 @@ function plots_virtTCRDD(
     dual_gen_tol::Float64 = 1e-1,
     )
 
-    # Getting Slack Generator and Bus
+    # Getting Slack Generator and Reference Bus
     # Get Slack Generator component, ID and name
-    gen_thermal_slack, gen_thermal_slack_id, gen_thermal_slack_name = get_thermal_slack(sys)
+    gen_thermal_slack, gen_thermal_slack_id, gen_thermal_slack_name = MaximumGeneratorProfitTCRDD.get_thermal_slack(sys)
     bus_slack = gen_thermal_slack.bus
     bus_slack_name = bus_slack.name
     # Get System Power Base
@@ -62,7 +62,7 @@ function plots_virtTCRDD(
 
     # Defining Plot limits
     div = 100
-    step = (Bidmax - Bidmin)/div
+    step = (bidMax - bidMin)/div
 
     #number of sender buses
     ns = length(sender_buses_names)
@@ -70,37 +70,52 @@ function plots_virtTCRDD(
     # Dimentionalize Arrays for Plots
     bids = Array{Float64}(undef, div+1)
     Pg_s = Array{Float64}(undef, div+1, ns)
-    residualD_virt =zeros(div+1, ns)
-    virt_profit = Array{Float64}(undef, div+1)
-    virt_profit_tcrdd = Array{Float64}(undef, div+1)
-    virt_profit_noCost = Array{Float64}(undef, div+1)
-    virt_profit_tcrdd_noCost = Array{Float64}(undef, div+1)
-    virt_cost = Array{Float64}(undef, div+1, ns)
+    Pg_s0 = Array{Float64}(undef, div+1, ns)
+    residualD_virt = zeros(div+1, ns)
+    residualD_virt_tot = zeros(div+1)
+    virt_profit_s = zeros(div+1, ns)
+    virt_profit_s_noCost = zeros(div+1, ns)
+    virt_profit_tot = Array{Float64}(undef, div+1)
+    virt_cost_s = Array{Float64}(undef, div+1, ns)
+    clearprice = zeros(div+1, ns)
     lmp_s = Array{Float64}(undef, div+1, ns)
-    lmp_s_apx = Array{Float64}(undef, div+1, ns)
-    tcrdd = Array{Float64}(undef, div+1, ns)
-    nbind_lines = Array{Int64}(undef, div+1)
+    lmp_s0 = Array{Float64}(undef, div+1, ns)
+    lmp_s_apx_tcrdd = Array{Float64}(undef, div+1, ns)
+    tcrdd = zeros(div+1, ns)
+    tcrdd0 = zeros(div+1, ns)
+    virt_profit_s_tcrdd = zeros(div+1, ns)
+    virt_profit_s_noCost_tcrdd = zeros(div+1, ns)
+    virt_profit_tot_tcrdd = Array{Float64}(undef, div+1)
+    clearprice_tcrdd = zeros(div+1, ns)
+
+    #virt_profit_tcrdd = Array{Float64}(undef, div+1)
+    #virt_profit_noCost = Array{Float64}(undef, div+1)
+    #virt_profit_tcrdd_noCost = Array{Float64}(undef, div+1)
+
+    #tcrdd = Array{Float64}(undef, div+1, ns)
+    #nbind_lines = Array{Int64}(undef, div+1)
+
     # TCRDD plot settings
-    same_tcrdd = false
-    gap_count = 0
-    tcrdd0 = 0
-    lmp_s0 = 0
-    Pg_s0 = 0
+    #same_tcrdd = false
+    #gap_count = 0
+    #tcrdd0 = 0
+    #lmp_s0 = 0
+    #Pg_s0 = 0
 
     # Add Virtual Generators
-    sys, gen_virt, gen_virt_names = add_virtual_gens!(
+    sys, gen_virt, gen_virt_names = MaximumGeneratorProfitTCRDD.add_virtual_gens!(
         sys,
         sender_buses_names,
         weights,
-        Bidmin,
-        Bidmax,
+        bidMin,
+        bidMax,
     )
 
     # Initial Conditions
     iter_opf = 0
     # Run Loops of OPF
     bid = 1.0 #just for tests
-    for bid in Bidmin:step:Bidmax #minimum bid to maximum bid
+    for bid in bidMin:step:bidMax #minimum bid to maximum bid
         # Increment iterations
         iter_opf = iter_opf + 1
         # Save bid
@@ -108,22 +123,19 @@ function plots_virtTCRDD(
         # Set the weighted bid as the maximum power for OPF
         for (i, gen_virt_name) in enumerate(gen_virt_names)
             gen_virt = get_component(ThermalStandard, sys, gen_virt_name)
-            set_active_power_limits!(gen_virt, (min = Bidmin, max = bid*weights[i]))
+            set_active_power_limits!(gen_virt, (min = bidMin, max = bid*weights[i]))
         end
         # Solve PTDF OPF
-        lmp, res = opf_PTDF(sys; network, solver)
-        # Calculate TCRDDs
+        lmp, res = MaximumGeneratorProfitTCRDD.opf_PTDF(sys; network, solver)
+        # Saving LMPs of the Bidding Buses
         for (i, bus_name) in enumerate(sender_buses_names)
-            change_slack!(sys, bus_name)
-            tcrdd[iter_opf, i] = f_TCRDD(sys, res; dual_lines_tol, dual_gen_tol)
+            lmp_s[iter_opf, i] = lmp[1, bus_name]
         end
-        # Return original slack
-        change_slack!(sys, bus_slack_name)
         # Getting optimised generation Outputs
         all_PGenThermal = get_variables(res)[:P__ThermalStandard]
 
         # Calculate Residual demand
-        residualD_virt, residualD_virt_tot = residual_demand_virt!(
+        residualD_virt, residualD_virt_tot = MaximumGeneratorProfitTCRDD.residual_demand_virt!(
             sys,
             res,
             gen_virt_names,
@@ -131,108 +143,67 @@ function plots_virtTCRDD(
             iter_opf
         )
 
-        # lmp slackbus
-        lmp_slack[iter_opf] = lmp[1, bus_slack_name]
+        # Calculate Residual demand
+        residualD_virt, residualD_virt_tot = MaximumGeneratorProfitTCRDD.residual_demand_virt!(
+            sys,
+            res,
+            gen_virt_names,
+            residualD_virt,
+            iter_opf
+        )
 
-        Pg_slack[iter_opf] = all_PGenThermal[1, gen_thermal_slack_name]
-        # Calculate cost of slack generator [$/hr] gen_cost = αPg² + βPg + γ
-        gen_cost_slack[iter_opf] =
-            α*(Pg_slack[iter_opf]*BaseMVA)^2 + β*(Pg_slack[iter_opf]*BaseMVA) + γ
-
-        # Clear price
-        clearprice = lmp_slack[iter_opf] * Pg_slack[iter_opf] * BaseMVA
-
-        # Calculating Gen Profit of Slack bus
-        gen_profit[iter_opf] = clearprice - gen_cost_slack[iter_opf]
-        gen_profit_noCost[iter_opf] = clearprice
-
-        # Number of Binding Lines
-        bind_lines = get_binding_lines(sys, res; dual_lines_tol)
-        nbind_lines[iter_opf] = length(bind_lines[:, 1])
-
-        # Only for Case 4 example
-        if examplecase4
-            # Saving Loadability of branch 1-3
-            branch1_3[iter_opf] = res.variable_values[:Fp__Line][1, "Line1"]
+        # Calculate Profit and cost of each virtual gen
+        for (i, gen_virt_name) in enumerate(gen_virt_names)
+            gen_virt = get_component(ThermalStandard, sys, gen_virt_name)
+            Pg_s[iter_opf, i] = all_PGenThermal[1, gen_virt_name]
+            # Calculate cost [$/hr] virt_cost = αPg² + βPg + γ
+            α, β = get_cost(get_variable(get_operation_cost(gen_virt)))
+            γ = get_fixed(get_operation_cost(gen_virt))
+            virt_cost_s[iter_opf, i] =
+                α*(Pg_s[iter_opf, i]*BaseMVA)^2 + β*(Pg_s[iter_opf, i]*BaseMVA) + γ
+            # Clear price
+            clearprice[iter_opf, i] = lmp_s[iter_opf, i] * Pg_s[iter_opf, i] * BaseMVA
+            # Profit
+            virt_profit_s[iter_opf, i] = clearprice[iter_opf, i] - virt_cost_s[iter_opf, i]
+            virt_profit_s_noCost[iter_opf, i] = clearprice[iter_opf, i]
+            virt_profit_tot[iter_opf] = virt_profit_tot[iter_opf] + virt_profit_s[iter_opf, i]
         end
 
-        # Gen Profit TCRDD
-        # Check if TCRDD is has changed within a tolerance
-        if iter_opf > 1
-            A_tcrdd = abs(tcrdd[iter_opf] - tcrdd[iter_opf - 1])
-            if A_tcrdd < tcrdd_tol
-                same_tcrdd = true
-            else
-                same_tcrdd = false
-            end
+        # Calculate TCRDDs
+        for (i, bus_name) in enumerate(sender_buses_names)
+            MaximumGeneratorProfitTCRDD.change_slack!(sys, bus_name)
+            tcrdd[iter_opf, i] = MaximumGeneratorProfitTCRDD.f_TCRDD(sys, res; dual_lines_tol, dual_gen_tol)
+        end
+        # Return original slack
+        MaximumGeneratorProfitTCRDD.change_slack!(sys, bus_slack_name)
+
+        # Calculate Profit and cost of each virtual gen using TCRDD
+        for (i, gen_virt_name) in enumerate(gen_virt_names)
+            tcrdd0[iter_opf, i] = tcrdd[iter_opf, i]/(BaseMVA^2)
+            lmp_s0[iter_opf, i] = lmp_s[iter_opf, i]
+            Pg_s0[iter_opf, i] = Pg_s[iter_opf, i]
+            gen_virt = get_component(ThermalStandard, sys, gen_virt_name)
+            Pg_s[iter_opf, i] = all_PGenThermal[1, gen_virt_name]
+            # Clear price
+            lmp_s_apx_tcrdd[iter_opf, i] =
+                ( (1/tcrdd0[iter_opf, i]) * (Pg_s[iter_opf, i] - Pg_s0[iter_opf, i]) ) + lmp_s0[iter_opf, i]
+            clearprice_tcrdd[iter_opf, i] = lmp_s_apx_tcrdd[iter_opf, i] * Pg_s[iter_opf, i] * BaseMVA
+            # Profit
+            virt_profit_s_tcrdd[iter_opf, i] = clearprice_tcrdd[iter_opf, i] - virt_cost_s[iter_opf, i]
+            virt_profit_s_noCost_tcrdd[iter_opf, i] = clearprice_tcrdd[iter_opf, i]
+            virt_profit_tot_tcrdd[iter_opf] = virt_profit_tot_tcrdd[iter_opf] + virt_profit_s_tcrdd[iter_opf, i]
         end
 
-        if iter_opf == 1
-            # Calculate the values for the approximation
-            tcrdd0 = tcrdd[iter_opf]/(BaseMVA^2)
-            lmp_slack0 = lmp_slack[iter_opf]
-            Pg_slack0 = Pg_slack[iter_opf]
-            # Evaluate the approximation for the current Pg_slack
-            lmp_slack_apx_tcrdd[iter_opf] =
-                ( (1/tcrdd0) * (Pg_slack[iter_opf] - Pg_slack0) ) + lmp_slack0
-            clearprice_apx_tcrdd =
-                lmp_slack_apx_tcrdd[iter_opf] * Pg_slack[iter_opf] * BaseMVA
-            gen_profit_tcrdd[iter_opf] = clearprice_apx_tcrdd - gen_cost_slack[iter_opf]
-            gen_profit_tcrdd_noCost[iter_opf] = clearprice_apx_tcrdd
-            gap_count = 1
-
-        elseif iter_opf > 1 && same_tcrdd
-            # Don't recalculte the approximation, just evaluate it for the current Pg_slack
-            gap_count = gap_count +1;
-            if gap_count < gap
-                lmp_slack_apx_tcrdd[iter_opf] =
-                    ( (1/tcrdd0) * (Pg_slack[iter_opf] - Pg_slack0) ) + lmp_slack0
-                clearprice_apx_tcrdd =
-                    lmp_slack_apx_tcrdd[iter_opf] * Pg_slack[iter_opf] * BaseMVA
-                gen_profit_tcrdd[iter_opf] = clearprice_apx_tcrdd - gen_cost_slack[iter_opf]
-                gen_profit_tcrdd_noCost[iter_opf] = clearprice_apx_tcrdd
-            else
-                # The TCRDD is the same, but the gap has been reached,
-                # So force a re-calculation of the values for the approximation
-                tcrdd0 = tcrdd[iter_opf]/(BaseMVA^2);
-                lmp_slack0 = lmp_slack[iter_opf];
-                Pg_slack0 = Pg_slack[iter_opf];
-                # Evaluate the approximation for the current Pg_slack
-                lmp_slack_apx_tcrdd[iter_opf] =
-                    ( (1/tcrdd0) * (Pg_slack[iter_opf] - Pg_slack0) ) + lmp_slack0
-                clearprice_apx_tcrdd =
-                    lmp_slack_apx_tcrdd[iter_opf] * Pg_slack[iter_opf] * BaseMVA
-                gen_profit_tcrdd[iter_opf] = clearprice_apx_tcrdd - gen_cost_slack[iter_opf]
-                gen_profit_tcrdd_noCost[iter_opf] = clearprice_apx_tcrdd
-                # Restart the gap count
-                gap_count = 0
-            end
-
-        elseif iter_opf > 1 && !same_tcrdd
-            # The TCRDD changed, so re-calculate the values for the approximation
-            tcrdd0 = tcrdd[iter_opf]/(BaseMVA^2)
-            lmp_slack0 = lmp_slack[iter_opf]
-            Pg_slack0 = Pg_slack[iter_opf]
-            # Evaluate the approximation for the current Pg_slack
-            lmp_slack_apx_tcrdd[iter_opf] =
-                ( (1/tcrdd0) * (Pg_slack[iter_opf] - Pg_slack0) ) + lmp_slack0
-            clearprice_apx_tcrdd =
-                lmp_slack_apx_tcrdd[iter_opf] * Pg_slack[iter_opf] * BaseMVA
-            gen_profit_tcrdd[iter_opf] = clearprice_apx_tcrdd - gen_cost_slack[iter_opf]
-            gen_profit_tcrdd_noCost[iter_opf] = clearprice_apx_tcrdd
-            # Restart the gap count
-            gap_count = 0
-        end
-    end
+    end #for end
 
     # Display Plots
-    disp_plots(
+    disp_plots_virt(
         bids,
-        gen_profit,
-        gen_profit_tcrdd,
-        gen_profit_noCost,
-        gen_profit_tcrdd_noCost,
-        gen_cost_slack,
+        gen_profit_s,
+        gen_profit_s_tcrdd,
+        gen_profit_s_noCost,
+        gen_profit_s_tcrdd_noCost,
+        virt_cost_slack,
         Pg_slack,
         lmp_slack,
         lmp_slack_apx_tcrdd,
